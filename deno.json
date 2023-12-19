@@ -1,8 +1,13 @@
 {
   "tasks": {
-    "dev": "deno run --watch main.ts"
+    "dev": "deno run --watch --allow-read --allow-env --allow-sys --allow-net http/webserver.ts"
   },
   "imports": {
-    "lodash": "npm:lodash@^4.17"
+    "fastify": "npm:fastify",
+    "to-json-schema": "npm:to-json-schema",
+    "graphql": "npm:graphql",
+    "mongodb": "npm:mongodb",
+    "ts-simple-event-bus": "npm:ts-simple-event-bus@1.1.5",
+    "uuid": "npm:uuid"
   }
 }
