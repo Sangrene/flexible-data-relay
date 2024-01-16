@@ -2,7 +2,7 @@ import { assertEquals } from "https://deno.land/std@0.209.0/assert/mod.ts";
 import { jsonToJsonSchema } from "./jsonToJsonSchema.ts";
 import { JSONSchema7 } from "./jsonSchemaTypes.ts";
 
-Deno.test(function jsonToGraphqTestl() {
+Deno.test(function jsonToJsonSchemaTest() {
   const jsonToTest = {
     id: "id",
     a: "yes",
