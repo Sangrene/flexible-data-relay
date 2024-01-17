@@ -1,4 +1,3 @@
-import { Tenant } from "../tenants/tenant.model.ts";
 import { TenantRepository } from "../tenants/tenant.persistence.ts";
 import createJwtService from "./jwtService.ts";
 
@@ -41,3 +40,5 @@ const createAuthServer = async ({ tenantRepository }: AuthServerProps) => {
 };
 
 export default createAuthServer;
+
+export type AuthServer = Awaited<ReturnType<typeof createAuthServer>>;

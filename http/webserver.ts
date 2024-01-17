@@ -6,15 +6,18 @@ import Fastify, { FastifyRequest } from "fastify";
 import createAuthServer from "../auth/auth.ts";
 import { TenantRepository } from "../tenants/tenant.persistence.ts";
 import { Tenant } from "../tenants/tenant.model.ts";
+import { TenantCore } from "../tenants/tenant.core.ts";
 
 export const runWebServer = async ({
   entityCore,
   entityPersistence,
   tenantPersistence,
+  tenantCore,
 }: {
   entityCore: EntityCore;
   entityPersistence: EntityPersistenceHandler;
   tenantPersistence: TenantRepository;
+  tenantCore: TenantCore;
 }) => {
   const authServer = await createAuthServer({
     tenantRepository: tenantPersistence,
