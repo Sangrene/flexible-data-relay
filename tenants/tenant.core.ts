@@ -8,7 +8,6 @@ import {
 
 interface TenantCoreArgs {
   tenantPersistenceHandler: TenantRepository;
-  entityPersistenceHandler: EntityPersistenceHandler;
   graphqlCacheSchemas: GraphqlSchemasCache;
 }
 export const createTenantCore = ({
@@ -22,17 +21,25 @@ export const createTenantCore = ({
   const createTenant = async (tenantName: string) => {
     const secret = randomBytes(64).toString("hex");
     const hash = createHash("md5").update(secret).digest("hex") as string;
-    tenantPersistenceHandler.createTenant({
+    const tenant = await tenantPersistenceHandler.createTenant({
       name: tenantName,
       lastSecret: secret,
       lastSecretHash: hash,
       accessAllowed: [],
     });
+    return tenant;
   };
+
+  const getTenantById = async (id: string) => {
+    return await tenantPersistenceHandler.getTenantById(id);
+  };
+
+  
 
   return {
     getTenantGraphqlSchema,
     createTenant,
+    getTenantById,
   };
 };
 

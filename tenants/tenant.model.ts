@@ -7,6 +7,7 @@ export interface Tenant {
   accessAllowed: {
     owner: string;
     entityName: string;
-    permissions: Permission[];
+    // "read"
+    permissions: string[];
   }[];
 }

@@ -1,8 +1,9 @@
-import { TenantRepository } from "../tenants/tenant.persistence.ts";
+import { TenantCore } from "../tenants/tenant.core.ts";
+import { Tenant } from "../tenants/tenant.model.ts";
 import createJwtService from "./jwtService.ts";
 
 interface AuthServerProps {
-  tenantRepository: TenantRepository;
+  tenantCore: TenantCore;
 }
 
 class WrongCredentialsError extends Error {
@@ -11,7 +12,7 @@ class WrongCredentialsError extends Error {
   }
 }
 
-const createAuthServer = async ({ tenantRepository }: AuthServerProps) => {
+export const createAuthCore = async ({ tenantCore }: AuthServerProps) => {
   const jwtService = await createJwtService();
   const generateTokenFromCredentials = async ({
     clientId,
@@ -20,7 +21,7 @@ const createAuthServer = async ({ tenantRepository }: AuthServerProps) => {
     clientId: string;
     clientSecret: string;
   }) => {
-    const tenant = await tenantRepository.getTenantById(clientId);
+    const tenant = await tenantCore.getTenantById(clientId);
     if (tenant.lastSecret !== clientSecret) throw new WrongCredentialsError();
     const token = await jwtService.createJWT({ tenantId: tenant._id });
     return token;
@@ -29,16 +30,31 @@ const createAuthServer = async ({ tenantRepository }: AuthServerProps) => {
   const getTenantFromToken = async (token: string) => {
     const { tenantId } = await jwtService.verifyJWT(token);
     if (!tenantId) throw new WrongCredentialsError();
-    const tenant = await tenantRepository.getTenantById(tenantId as string);
+    const tenant = await tenantCore.getTenantById(tenantId as string);
     return tenant;
+  };
+
+  const hasAccessToResource = async (
+    tenant: Tenant,
+    {
+      entity,
+      owner,
+      permission,
+    }: { owner: string; entity: string; permission: string }
+  ) => {
+    return tenant.accessAllowed.some(
+      (item) =>
+        item.owner === owner &&
+        item.entityName === entity &&
+        item.permissions.includes(permission)
+    );
   };
 
   return {
     generateTokenFromCredentials,
     getTenantFromToken,
+    hasAccessToResource,
   };
 };
 
-export default createAuthServer;
-
-export type AuthServer = Awaited<ReturnType<typeof createAuthServer>>;
+export type AuthCore = Awaited<ReturnType<typeof createAuthCore>>;

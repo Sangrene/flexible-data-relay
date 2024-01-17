@@ -1,28 +1,22 @@
 import { executeSourceAgainstSchema } from "../tenants/tenantSchema.ts";
 import { EntityCore } from "../entities/entity.core.ts";
-import { schemaCache } from "../graphql/graphqlSchemasCache.ts";
-import { EntityPersistenceHandler } from "../entities/entities.persistence.ts";
+import { GraphqlSchemasCache } from "../graphql/graphqlSchemasCache.ts";
 import Fastify, { FastifyRequest } from "fastify";
-import createAuthServer from "../auth/auth.ts";
-import { TenantRepository } from "../tenants/tenant.persistence.ts";
+import { AuthCore } from "../auth/auth.ts";
 import { Tenant } from "../tenants/tenant.model.ts";
 import { TenantCore } from "../tenants/tenant.core.ts";
 
 export const runWebServer = async ({
   entityCore,
-  entityPersistence,
-  tenantPersistence,
   tenantCore,
+  authCore,
+  schemasCache,
 }: {
   entityCore: EntityCore;
-  entityPersistence: EntityPersistenceHandler;
-  tenantPersistence: TenantRepository;
   tenantCore: TenantCore;
+  authCore: AuthCore;
+  schemasCache: GraphqlSchemasCache;
 }) => {
-  const authServer = await createAuthServer({
-    tenantRepository: tenantPersistence,
-  });
-  const store = schemaCache(entityPersistence);
   const fastify = Fastify({
     logger: true,
   });
@@ -31,7 +25,7 @@ export const runWebServer = async ({
     "/token",
     async (req, res) => {
       return {
-        Bearer: await authServer.generateTokenFromCredentials(req.body),
+        Bearer: await authCore.generateTokenFromCredentials(req.body),
       };
     }
   );
@@ -39,7 +33,7 @@ export const runWebServer = async ({
   fastify.addHook(
     "preHandler",
     async (req: FastifyRequest & { tenant?: Tenant }, rep) => {
-      const tenant = await authServer.getTenantFromToken(req.headers.Bearer);
+      const tenant = await authCore.getTenantFromToken(req.headers.Bearer);
       req.tenant = tenant;
     }
   );
@@ -55,7 +49,7 @@ export const runWebServer = async ({
     async function handler(request, reply) {
       const result = await executeSourceAgainstSchema({
         source: request.body.query,
-        schemasCache: store,
+        schemasCache: schemasCache,
         tenant: request.headers.tenant,
       });
       return result;

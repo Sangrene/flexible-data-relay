@@ -1,7 +1,7 @@
 import { JSONSchema7 } from "../json-schema/jsonSchemaTypes.ts";
 import { EntityPersistenceHandler } from "./entities.persistence.ts";
 
-export const inMemoryRepository = (): EntityPersistenceHandler => {
+export const createEntityInMemoryRepository = (): EntityPersistenceHandler => {
   const inMemoryStore: {
     [tenant: string]: { schemas: JSONSchema7[]; [entityName: string]: any[] };
   } = {};
