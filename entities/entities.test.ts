@@ -3,7 +3,6 @@ import { entityCore as createEntityCore } from "./entity.core.ts";
 import { createEntityInMemoryRepository } from "./entitiesinMemoryRepository.ts";
 import { schemaCache } from "../graphql/graphqlSchemasCache.ts";
 import { executeSourceAgainstSchema } from "../tenants/tenantSchema.ts";
-import { Timeout } from "https://deno.land/x/timeout/mod.ts";
 
 Deno.test(async function canQueryJustAddedEntityWithGraphQL() {
   const persistence = createEntityInMemoryRepository();

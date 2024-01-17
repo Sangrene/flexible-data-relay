@@ -45,10 +45,6 @@ const createJwtService = async () => {
     return await verify(token, key);
   };
 
-  const decodeJWT = async (token: string) => {
-    return decode(token);
-  };
-
   return {
     createJWT,
     verifyJWT,

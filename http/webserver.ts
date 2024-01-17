@@ -23,7 +23,7 @@ export const runWebServer = async ({
 
   fastify.post<{ Body: { clientId: string; clientSecret: string } }>(
     "/token",
-    async (req, res) => {
+    async (req) => {
       return {
         Bearer: await authCore.generateTokenFromCredentials(req.body),
       };
@@ -32,13 +32,13 @@ export const runWebServer = async ({
 
   fastify.addHook(
     "preHandler",
-    async (req: FastifyRequest & { tenant?: Tenant }, rep) => {
+    async (req: FastifyRequest & { tenant?: Tenant }) => {
       const tenant = await authCore.getTenantFromToken(req.headers.Bearer);
       req.tenant = tenant;
     }
   );
 
-  fastify.get("/app/:tenant", async function handler(request, reply) {
+  fastify.get("/app/:tenant", async function handler(request) {
     console.log(request.params);
 
     return { hello: "world" };
@@ -46,7 +46,7 @@ export const runWebServer = async ({
 
   fastify.post<{ Headers: { tenant: string }; Body: { query: string } }>(
     "/app/:tenant/graphql",
-    async function handler(request, reply) {
+    async function handler(request) {
       const result = await executeSourceAgainstSchema({
         source: request.body.query,
         schemasCache: schemasCache,
@@ -58,7 +58,7 @@ export const runWebServer = async ({
 
   fastify.post<{ Headers: { tenant: string }; Params: { entity: string } }>(
     "/app/entity/:entity",
-    async function handler(request, reply) {
+    async function handler(request) {
       const entity = entityCore.createOrUpdateEntity({
         entity: request.body as any,
         tenant: request.headers.tenant,

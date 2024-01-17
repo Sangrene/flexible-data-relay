@@ -10,5 +10,11 @@
     "mongodb": "npm:mongodb",
     "ts-simple-event-bus": "npm:ts-simple-event-bus@2.0.5",
     "uuid": "npm:uuid"
+  },
+  "lint": {
+    "exclude": ["migrations/"],
+    "rules": {
+      "exclude": ["no-explicit-any", "require-await"]
+    }
   }
 }

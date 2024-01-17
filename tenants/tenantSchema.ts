@@ -1,4 +1,4 @@
-import { GraphQLError, graphql } from "graphql";
+import { graphql } from "graphql";
 import { GraphqlSchemasCache } from "../graphql/graphqlSchemasCache.ts";
 
 export const executeSourceAgainstSchema = async ({

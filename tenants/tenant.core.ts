@@ -1,4 +1,3 @@
-import { EntityPersistenceHandler } from "../entities/entities.persistence.ts";
 import { GraphqlSchemasCache } from "../graphql/graphqlSchemasCache.ts";
 import { TenantRepository } from "./tenant.persistence.ts";
 import {
@@ -33,8 +32,6 @@ export const createTenantCore = ({
   const getTenantById = async (id: string) => {
     return await tenantPersistenceHandler.getTenantById(id);
   };
-
-  
 
   return {
     getTenantGraphqlSchema,

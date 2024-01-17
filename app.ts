@@ -3,7 +3,7 @@ import { runWebServer } from "./http/webserver.ts";
 import { entityCore as createEntityCore } from "./entities/entity.core.ts";
 import { createEntityInMemoryRepository } from "./entities/entitiesinMemoryRepository.ts";
 import { tenantInMemoryRepository } from "./tenants/tenantsInMemoryRepository.ts";
-import {createAuthCore} from "./auth/auth.ts";
+import { createAuthCore } from "./auth/auth.ts";
 import { createTenantCore } from "./tenants/tenant.core.ts";
 import { schemaCache } from "./graphql/graphqlSchemasCache.ts";
 
@@ -19,8 +19,7 @@ const authCore = await createAuthCore({
   tenantCore,
 });
 
-
-const webserver = runWebServer({
+runWebServer({
   entityCore,
   authCore,
   tenantCore,

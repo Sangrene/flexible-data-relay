@@ -5,7 +5,6 @@ import {
 } from "./jsonToGraphql.ts";
 import { formatSdl } from "npm:format-graphql";
 import {
-  GraphQLSchema,
   GraphQLObjectType,
   GraphQLString,
   GraphQLID,
@@ -166,5 +165,8 @@ Deno.test(function computeRecursiveGraphQlObjectTypeTest() {
     "Json",
     jsonSchema
   ) as GraphQLObjectType;
-  assertEquals(JSON.stringify(result.toConfig()), JSON.stringify(objectType.toConfig()));
+  assertEquals(
+    JSON.stringify(result.toConfig()),
+    JSON.stringify(objectType.toConfig())
+  );
 });

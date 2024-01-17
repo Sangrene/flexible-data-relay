@@ -3,7 +3,7 @@ import { EntityPersistenceHandler } from "./entities.persistence.ts";
 import { JSONSchema7 } from "../json-schema/jsonSchemaTypes.ts";
 
 const SCHEMAS_COLLECTION = "schemas";
-const entitiesMongoRepository = ({
+export const entitiesMongoRepository = ({
   getTenantDb,
 }: {
   getTenantDb: (tenant: string) => Db;
@@ -53,7 +53,7 @@ const entitiesMongoRepository = ({
     },
     updateEntity: async ({ entity, entityName, tenant }) => {
       const collection = getTenantDb(tenant).collection(entityName);
-      const savedEntity = await collection.updateOne(
+      const savedEntity =await collection.updateOne(
         { id: entity.id },
         { ...entity }
       );
