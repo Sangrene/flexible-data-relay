@@ -46,7 +46,7 @@ export const entityCore = ({ persistence }: EntityCoreArgs) => {
     entity: any & { id: string };
     tenant: string;
   }) => {
-    if (!entity.id) throw new Error("Entity has no id");
+    if (!entity.id) throw new Error("Entity should have an 'id' field that serves as identifier");
     await persistence.createOrUpdateEntity({ tenant, entityName, entity });
     processNewEntitySchema({ entityName, entity, tenant });
     return entity;

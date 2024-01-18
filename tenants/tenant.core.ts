@@ -25,6 +25,7 @@ export const createTenantCore = ({
       lastSecret: secret,
       lastSecretHash: hash,
       accessAllowed: [],
+      subscriptions: [],
     });
     return tenant;
   };

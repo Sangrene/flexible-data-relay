@@ -1,4 +1,4 @@
-import { executeSourceAgainstSchema } from "../tenants/tenantSchema.ts";
+import { executeSourceAgainstSchema } from "../tenants/graphqlExecutionManager.ts";
 import { EntityCore } from "../entities/entity.core.ts";
 import { GraphqlSchemasCache } from "../graphql/graphqlSchemasCache.ts";
 import Fastify, { FastifyRequest } from "fastify";

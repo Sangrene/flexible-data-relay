@@ -3,6 +3,7 @@ import {
   verify,
   getNumericDate,
 } from "https://deno.land/x/djwt@v3.0.1/mod.ts";
+import "https://deno.land/std@0.209.0/dotenv/load.ts";
 
 const keyConfig: {
   algo: HmacImportParams;
@@ -17,7 +18,9 @@ const keyConfig: {
 const storedKey: JsonWebKey = {
   alg: "HS512",
   ext: true,
-  k: "WGnzrQxmNpjDbXLw4b8g6JUq1-X4LtsyXgi9SslCrTRtAlNysQyC7_beT-AnB-sWJX60Rf-MqTt9-CrcN67IBXBZmH0QGL4Zqg6T_M6FQWuA43XNLErBeJsaaeDF3Jp1-m2-WRG4usPzzb6SSZ1H3CGZBBc6zi_5nfhLd7HX7j0",
+  k:
+    Deno.env.get("AUTH_SECRET_KEY") ||
+    "WGnzrQxmNpjDbXLw4b8g6JUq1-X4LtsyXgi9SslCrTRtAlNysQyC7_beT-AnB-sWJX60Rf-MqTt9-CrcN67IBXBZmH0QGL4Zqg6T_M6FQWuA43XNLErBeJsaaeDF3Jp1-m2-WRG4usPzzb6SSZ1H3CGZBBc6zi_5nfhLd7HX7j0",
   key_ops: ["sign", "verify"],
   kty: "oct",
 };
