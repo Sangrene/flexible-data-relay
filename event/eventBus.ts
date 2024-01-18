@@ -8,6 +8,12 @@ type EventBusTyping = {
     tenant: string;
     schema: JSONSchema7;
   };
+  "entity.updated": {
+    entity: Record<string, any>;
+  };
+  "entity.created": {
+    entity: Record<string, any>;
+  };
 };
 
 export const eventBus = new EventBus<EventBusTyping>(uuidv4);

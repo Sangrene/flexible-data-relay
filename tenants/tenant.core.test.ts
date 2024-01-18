@@ -1,13 +1,17 @@
-import { assertEquals } from "https://deno.land/std@0.209.0/assert/assert_equals.ts";
+import {
+  assertEquals,
+  assertThrows,
+} from "https://deno.land/std@0.212.0/assert/mod.ts";
+
 import { createTenantCore } from "./tenant.core.ts";
 import { tenantInMemoryRepository } from "./tenantsInMemoryRepository.ts";
-import { schemaCache } from "../graphql/graphqlSchemasCache.ts";
+import { createTenantCache } from "../graphql/graphqlSchemasCache.ts";
 import { createEntityInMemoryRepository } from "../entities/entitiesinMemoryRepository.ts";
 
 Deno.test(async function createTenantWithRightSchema() {
   const tenantPersistence = tenantInMemoryRepository();
   const entityPersistence = createEntityInMemoryRepository();
-  const cache = await schemaCache(entityPersistence, tenantPersistence);
+  const cache = await createTenantCache(entityPersistence, tenantPersistence);
 
   const tenantCore = createTenantCore({
     tenantPersistenceHandler: tenantPersistence,
@@ -17,3 +21,53 @@ Deno.test(async function createTenantWithRightSchema() {
   const storedTenant = await tenantCore.getTenantById(tenant._id);
   assertEquals(tenant, storedTenant);
 });
+
+Deno.test(async function canTenantHaveAccessToHisOwnResource() {
+  const tenantPersistence = tenantInMemoryRepository();
+  const entityPersistence = createEntityInMemoryRepository();
+  const cache = await createTenantCache(entityPersistence, tenantPersistence);
+
+  const tenantCore = createTenantCore({
+    tenantPersistenceHandler: tenantPersistence,
+    graphqlCacheSchemas: cache,
+  });
+  const tenant = await tenantCore.createTenant("tenant");
+  assertEquals(tenantCore.accessGuard(tenant, { owner: "tenant" }), true);
+});
+
+Deno.test(
+  async function tenantCantHaveAccessToAnotherOwnerWithoutAuthorization() {
+    const tenantPersistence = tenantInMemoryRepository();
+    const entityPersistence = createEntityInMemoryRepository();
+    const cache = await createTenantCache(entityPersistence, tenantPersistence);
+
+    const tenantCore = createTenantCore({
+      tenantPersistenceHandler: tenantPersistence,
+      graphqlCacheSchemas: cache,
+    });
+    const tenant = await tenantCore.createTenant("tenant");
+    assertThrows(() => tenantCore.accessGuard(tenant, { owner: "" }), Error);
+  }
+);
+
+Deno.test(
+  async function tenantCanAccessAnotherOwnerResourceWithAuthorization() {
+    const tenantPersistence = tenantInMemoryRepository();
+    const entityPersistence = createEntityInMemoryRepository();
+    const cache = await createTenantCache(entityPersistence, tenantPersistence);
+
+    const tenantCore = createTenantCore({
+      tenantPersistenceHandler: tenantPersistence,
+      graphqlCacheSchemas: cache,
+    });
+    await tenantCore.createTenant("tenant1");
+    await tenantCore.createTenant("tenant2");
+    await tenantCore.allowTenantAccessToOwnResource({
+      currentTenantName: "tenant1",
+      allowedTenantName: "tenant2",
+    });
+    const tenant2 = await tenantPersistence.getTenantByName("tenant2");
+    assertEquals(tenantCore.accessGuard(tenant2!, { owner: "tenant1" }), true);
+  }
+);
+

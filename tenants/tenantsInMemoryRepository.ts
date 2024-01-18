@@ -35,5 +35,15 @@ export const tenantInMemoryRepository = (): TenantRepository => {
       }
       throw new Error(`No tenant with name ${name}`);
     },
+    addSubscription: async ({ subscription, tenantId }) => {
+      for (let i = 0, n = inMemoryStore.length; i < n; i++) {
+        const tenant = inMemoryStore[i];
+        if (tenant._id === tenantId) {
+          tenant.subscriptions.push(subscription);
+          return tenant;
+        }
+      }
+      throw new Error(`No tenant with name ${name}`);
+    },
   };
 };

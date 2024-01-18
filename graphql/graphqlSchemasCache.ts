@@ -6,7 +6,7 @@ import { EntityPersistenceHandler } from "../entities/entities.persistence.ts";
 import { TenantRepository } from "../tenants/tenant.persistence.ts";
 import { logger } from "../logging/logger.ts";
 
-export const schemaCache = async (
+export const createTenantCache = async (
   entityPersistence: EntityPersistenceHandler,
   tenantPersistence?: TenantRepository
 ) => {
@@ -84,4 +84,4 @@ export const schemaCache = async (
   };
 };
 
-export type GraphqlSchemasCache = Awaited<ReturnType<typeof schemaCache>>;
+export type TenantsCache = Awaited<ReturnType<typeof createTenantCache>>;

@@ -1,3 +1,5 @@
+import { ObjectId } from "mongodb";
+
 type Permission = "read";
 
 export interface Access {
@@ -7,6 +9,13 @@ export interface Access {
 export interface Subscription {
   owner: string;
   entityName: string;
+  queue?: {
+    queueName: string;
+    queueUrl: string;
+  };
+  webhook?: {
+    url: string;
+  };
 }
 export interface Tenant {
   _id: string;

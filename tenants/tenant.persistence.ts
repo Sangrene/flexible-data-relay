@@ -1,4 +1,4 @@
-import { Access, Tenant } from "./tenant.model.ts";
+import { Access, Subscription, Tenant } from "./tenant.model.ts";
 
 export interface TenantRepository {
   getTenantById: (tenantId: string) => Promise<Tenant | null>;
@@ -9,4 +9,8 @@ export interface TenantRepository {
     tenantName: string,
     access: Access
   ) => Promise<Tenant>;
+  addSubscription: (p: {
+    tenantId: string;
+    subscription: Subscription;
+  }) => Promise<Tenant>;
 }

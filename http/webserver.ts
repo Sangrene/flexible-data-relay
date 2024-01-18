@@ -1,9 +1,9 @@
 import { executeSourceAgainstSchema } from "../tenants/graphqlExecutionManager.ts";
 import { EntityCore } from "../entities/entity.core.ts";
-import { GraphqlSchemasCache } from "../graphql/graphqlSchemasCache.ts";
+import { TenantsCache } from "../graphql/graphqlSchemasCache.ts";
 import Fastify, { FastifyRequest } from "fastify";
 import { AuthCore } from "../auth/auth.ts";
-import { Tenant } from "../tenants/tenant.model.ts";
+import { Subscription, Tenant } from "../tenants/tenant.model.ts";
 import { TenantCore } from "../tenants/tenant.core.ts";
 
 type RequestWithTenant = FastifyRequest & { tenant?: Tenant };
@@ -17,7 +17,7 @@ export const runWebServer = async ({
   entityCore: EntityCore;
   tenantCore: TenantCore;
   authCore: AuthCore;
-  schemasCache: GraphqlSchemasCache;
+  schemasCache: TenantsCache;
 }) => {
   const fastify = Fastify({
     logger: true,
@@ -58,8 +58,8 @@ export const runWebServer = async ({
         "/allow-access",
         async (req) => {
           return await tenantCore.allowTenantAccessToOwnResource({
-            me: getTenantFromRequest(req).name,
-            tenant: req.body.tenantName,
+            currentTenantName: getTenantFromRequest(req).name,
+            allowedTenantName: req.body.tenantName,
           });
         }
       );
@@ -67,12 +67,9 @@ export const runWebServer = async ({
       fastify.post<{ Params: { tenant: string }; Body: { query: string } }>(
         "/:tenant/graphql",
         async function handler(request) {
-          const currentTenant = getTenantFromRequest(request);
-          if (currentTenant.name !== request.params.tenant) {
-            authCore.accessGuard(currentTenant, {
-              owner: request.params.tenant,
-            });
-          }
+          tenantCore.accessGuard(getTenantFromRequest(request), {
+            owner: request.params.tenant,
+          });
 
           const result = await executeSourceAgainstSchema({
             source: request.body.query,
@@ -86,12 +83,10 @@ export const runWebServer = async ({
       fastify.post<{ Params: { entity: string; tenant: string } }>(
         "/:tenant/entity/:entity",
         async function handler(request) {
-          const currentTenant = getTenantFromRequest(request);
-          if (currentTenant.name !== request.params.tenant) {
-            authCore.accessGuard(currentTenant, {
-              owner: request.params.tenant,
-            });
-          }
+          tenantCore.accessGuard(getTenantFromRequest(request), {
+            owner: request.params.tenant,
+          });
+
           const entity = entityCore.createOrUpdateEntity({
             entity: request.body as any,
             tenant: request.params.tenant,
@@ -100,6 +95,21 @@ export const runWebServer = async ({
           return entity;
         }
       );
+
+      fastify.post<{
+        Params: { tenant: string };
+        Body: { subscription: Subscription };
+      }>("/:tenant/subscribe", async function handler(request) {
+        const currentTenant = getTenantFromRequest(request);
+        tenantCore.accessGuard(currentTenant, {
+          owner: request.params.tenant,
+        });
+
+        return await tenantCore.createSubscription({
+          subscription: request.body.subscription,
+          tenant: currentTenant,
+        });
+      });
       done();
     },
     { prefix: "/app" }

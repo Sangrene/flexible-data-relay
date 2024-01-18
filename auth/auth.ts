@@ -35,15 +35,9 @@ export const createAuthCore = async ({ tenantCore }: AuthServerProps) => {
     return tenant;
   };
 
-  const accessGuard = (tenant: Tenant, { owner }: { owner: string }) => {
-    const hasAccess = tenant.accessAllowed.some((item) => item.owner === owner);
-    if (!hasAccess) throw new Error("You don't have access to this resource");
-  };
-
   return {
     generateTokenFromCredentials,
     getTenantFromToken,
-    accessGuard,
   };
 };
 

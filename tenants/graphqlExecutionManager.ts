@@ -1,12 +1,12 @@
 import { graphql } from "graphql";
-import { GraphqlSchemasCache } from "../graphql/graphqlSchemasCache.ts";
+import { TenantsCache } from "../graphql/graphqlSchemasCache.ts";
 
 export const executeSourceAgainstSchema = async ({
   source,
   tenant,
   schemasCache,
 }: {
-  schemasCache: GraphqlSchemasCache;
+  schemasCache: TenantsCache;
   tenant: string;
   source: string;
 }) => {

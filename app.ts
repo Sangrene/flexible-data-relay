@@ -5,7 +5,7 @@ import { entityCore as createEntityCore } from "./entities/entity.core.ts";
 // import { tenantInMemoryRepository } from "./tenants/tenantsInMemoryRepository.ts";
 import { createAuthCore } from "./auth/auth.ts";
 import { createTenantCore } from "./tenants/tenant.core.ts";
-import { schemaCache } from "./graphql/graphqlSchemasCache.ts";
+import { createTenantCache } from "./graphql/graphqlSchemasCache.ts";
 import { createTenantsMongoRepository } from "./tenants/tenantsMongoRepository.ts";
 import { createEntitiesMongoRepository } from "./entities/entitiesMongoRepository.ts";
 import { getMasterDb, getTenantDb } from "./persistence/mongo.ts";
@@ -15,7 +15,7 @@ import { getMasterDb, getTenantDb } from "./persistence/mongo.ts";
 const entityPersistence = createEntitiesMongoRepository({ getTenantDb });
 const tenantsPersistence = createTenantsMongoRepository(getMasterDb());
 const entityCore = createEntityCore({ persistence: entityPersistence });
-const cache = await schemaCache(entityPersistence, tenantsPersistence);
+const cache = await createTenantCache(entityPersistence, tenantsPersistence);
 const tenantCore = createTenantCore({
   graphqlCacheSchemas: cache,
   tenantPersistenceHandler: tenantsPersistence,
