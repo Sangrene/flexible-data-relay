@@ -1,6 +1,5 @@
 import { Db, ObjectId } from "mongodb";
 import { TenantRepository } from "./tenant.persistence.ts";
-import { Tenant } from "./tenant.model.ts";
 
 const TENANT_COLLECTION_NAME = "tenant";
 

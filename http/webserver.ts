@@ -36,7 +36,7 @@ export const runWebServer = async ({
   );
 
   await fastify.register(
-    async (fastify, opts, done) => {
+    async (fastify, _, done) => {
       fastify.addHook("preHandler", async (req: RequestWithTenant) => {
         const tenant = await authCore.getTenantFromToken(req.headers.bearer);
         req.tenant = tenant;
@@ -51,7 +51,7 @@ export const runWebServer = async ({
       fastify.post<{ Params: { tenant: string }; Body: { query: string } }>(
         "/:tenant/graphql",
         async function handler(request) {
-          //@ts-ignore
+          //@ts-ignore tenant is always there, and can't declare module to extends Request with deno
           const currentTenant: Tenant = request.tenant;
           if (currentTenant.name !== request.params.tenant) {
             authCore.accessGuard(currentTenant, {
