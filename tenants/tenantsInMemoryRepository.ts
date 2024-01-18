@@ -13,8 +13,14 @@ export const tenantInMemoryRepository = (): TenantRepository => {
     inMemoryStore.push(storedTenant);
     return storedTenant;
   };
+
+  const getAllTenants = async () => {
+    return inMemoryStore;
+  };
+
   return {
     getTenantById,
     createTenant,
+    getAllTenants,
   };
 };

@@ -6,6 +6,8 @@ import { AuthCore } from "../auth/auth.ts";
 import { Tenant } from "../tenants/tenant.model.ts";
 import { TenantCore } from "../tenants/tenant.core.ts";
 
+type RequestWithTenant = FastifyRequest & { tenant?: Tenant };
+
 export const runWebServer = async ({
   entityCore,
   tenantCore,
@@ -25,47 +27,61 @@ export const runWebServer = async ({
     "/token",
     async (req) => {
       return {
-        Bearer: await authCore.generateTokenFromCredentials(req.body),
+        Bearer: await authCore.generateTokenFromCredentials({
+          clientId: req.body.clientId,
+          clientSecret: req.body.clientSecret,
+        }),
       };
     }
   );
 
-  fastify.addHook(
-    "preHandler",
-    async (req: FastifyRequest & { tenant?: Tenant }) => {
-      const tenant = await authCore.getTenantFromToken(req.headers.Bearer);
-      req.tenant = tenant;
-    }
-  );
-
-  fastify.get("/app/:tenant", async function handler(request) {
-    console.log(request.params);
-
-    return { hello: "world" };
-  });
-
-  fastify.post<{ Headers: { tenant: string }; Body: { query: string } }>(
-    "/app/:tenant/graphql",
-    async function handler(request) {
-      const result = await executeSourceAgainstSchema({
-        source: request.body.query,
-        schemasCache: schemasCache,
-        tenant: request.headers.tenant,
+  await fastify.register(
+    async (fastify, opts, done) => {
+      fastify.addHook("preHandler", async (req: RequestWithTenant) => {
+        const tenant = await authCore.getTenantFromToken(req.headers.bearer);
+        req.tenant = tenant;
       });
-      return result;
-    }
-  );
 
-  fastify.post<{ Headers: { tenant: string }; Params: { entity: string } }>(
-    "/app/entity/:entity",
-    async function handler(request) {
-      const entity = entityCore.createOrUpdateEntity({
-        entity: request.body as any,
-        tenant: request.headers.tenant,
-        entityName: request.params.entity,
+      fastify.get("/:tenant", async function handler(request) {
+        console.log(request.params);
+
+        return { hello: "world" };
       });
-      return entity;
-    }
+
+      fastify.post<{ Params: { tenant: string }; Body: { query: string } }>(
+        "/:tenant/graphql",
+        async function handler(request) {
+          //@ts-ignore
+          const currentTenant: Tenant = request.tenant;
+          if (currentTenant.name !== request.params.tenant) {
+            authCore.accessGuard(currentTenant, {
+              owner: request.params.tenant,
+            });
+          }
+
+          const result = await executeSourceAgainstSchema({
+            source: request.body.query,
+            schemasCache: schemasCache,
+            tenant: request.params.tenant,
+          });
+          return result;
+        }
+      );
+
+      fastify.post<{ Params: { entity: string; tenant: string } }>(
+        "/:tenant/entity/:entity",
+        async function handler(request) {
+          const entity = entityCore.createOrUpdateEntity({
+            entity: request.body as any,
+            tenant: request.params.tenant,
+            entityName: request.params.entity,
+          });
+          return entity;
+        }
+      );
+      done();
+    },
+    { prefix: "/app" }
   );
 
   try {

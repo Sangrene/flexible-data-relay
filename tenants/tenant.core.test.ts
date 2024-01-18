@@ -7,7 +7,7 @@ import { createEntityInMemoryRepository } from "../entities/entitiesinMemoryRepo
 Deno.test(async function createTenantWithRightSchema() {
   const tenantPersistence = tenantInMemoryRepository();
   const entityPersistence = createEntityInMemoryRepository();
-  const cache = schemaCache(entityPersistence);
+  const cache = await schemaCache(entityPersistence, tenantPersistence);
 
   const tenantCore = createTenantCore({
     tenantPersistenceHandler: tenantPersistence,

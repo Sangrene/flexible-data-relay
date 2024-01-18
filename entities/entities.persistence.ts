@@ -35,4 +35,5 @@ export interface EntityPersistenceHandler {
     newSchema: JSONSchema7;
     tenant: string;
   }) => Promise<any>;
+  getAllSchemas: (tenant: string) => Promise<JSONSchema7[]>;
 }

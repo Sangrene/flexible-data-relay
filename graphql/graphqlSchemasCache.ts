@@ -3,12 +3,42 @@ import { eventBus } from "../event/eventBus.ts";
 import { JSONSchema7 } from "../json-schema/jsonSchemaTypes.ts";
 import { createGraphqlSchemaFromEntitiesSchema } from "./jsonToGraphql.ts";
 import { EntityPersistenceHandler } from "../entities/entities.persistence.ts";
+import { TenantRepository } from "../tenants/tenant.persistence.ts";
+import { logger } from "../logging/logger.ts";
 
-export const schemaCache = (entityPersistence: EntityPersistenceHandler) => {
+export const schemaCache = async (
+  entityPersistence: EntityPersistenceHandler,
+  tenantPersistence: TenantRepository
+) => {
   const schemas: {
     [tenant: string]: { entities: JSONSchema7[]; graphqlSchema: GraphQLSchema };
   } = {};
-
+  const loadAllSchemas = async () => {
+    const tenants = await tenantPersistence.getAllTenants();
+    const result = await Promise.all(
+      tenants.map(async (tenant) => {
+        return {
+          schemas: await entityPersistence.getAllSchemas(tenant.name),
+          tenant,
+        };
+      })
+    );
+    result.forEach((res) => {
+      const graphqlSchema = createGraphqlSchemaFromEntitiesSchema(
+        res.tenant.name,
+        res.schemas.map((entity) => ({
+          name: entity.title || "",
+          schema: entity,
+        })),
+        entityPersistence
+      );
+      schemas[res.tenant.name] = {
+        entities: res.schemas,
+        graphqlSchema,
+      };
+    });
+    logger.info(`Loaded ${tenants.length} tenants schema in cache.`);
+  };
   const getTenantValue = (tenant: string) => {
     if (!schemas[tenant]) {
       schemas[tenant] = {
@@ -46,10 +76,10 @@ export const schemaCache = (entityPersistence: EntityPersistenceHandler) => {
       val.graphqlSchema = graphqlSchema;
     },
   });
-
+  await loadAllSchemas();
   return {
     getTenantSchema,
   };
 };
 
-export type GraphqlSchemasCache = ReturnType<typeof schemaCache>;
+export type GraphqlSchemasCache = Awaited<ReturnType<typeof schemaCache>>;

@@ -6,8 +6,5 @@ export interface Tenant {
   lastSecretHash: string;
   accessAllowed: {
     owner: string;
-    entityName: string;
-    // "read"
-    permissions: string[];
   }[];
 }

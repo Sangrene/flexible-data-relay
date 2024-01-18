@@ -112,5 +112,8 @@ export const createEntityInMemoryRepository = (): EntityPersistenceHandler => {
         createEntity({ entityName, entity, tenant });
       }
     },
+    getAllSchemas: async (tenant: string) => {
+      return inMemoryStore[tenant].schemas;
+    },
   };
 };

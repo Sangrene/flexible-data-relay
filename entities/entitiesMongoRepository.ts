@@ -3,7 +3,7 @@ import { EntityPersistenceHandler } from "./entities.persistence.ts";
 import { JSONSchema7 } from "../json-schema/jsonSchemaTypes.ts";
 
 const SCHEMAS_COLLECTION = "schemas";
-export const entitiesMongoRepository = ({
+export const createEntitiesMongoRepository = ({
   getTenantDb,
 }: {
   getTenantDb: (tenant: string) => Db;
@@ -23,7 +23,7 @@ export const entitiesMongoRepository = ({
       const collection = getTenantDb(tenant).collection(entityName);
       const savedEntity = await collection.updateOne(
         { id: entity.id },
-        { ...entity },
+        { $set: { ...entity } },
         { upsert: true }
       );
       return savedEntity;
@@ -46,18 +46,23 @@ export const entitiesMongoRepository = ({
       const collection = getTenantDb(tenant).collection(SCHEMAS_COLLECTION);
       const schema = await collection.updateOne(
         { title: entityName },
-        { ...newSchema, title: entityName },
+        { $set: { ...newSchema, title: entityName } },
         { upsert: true }
       );
       return schema;
     },
     updateEntity: async ({ entity, entityName, tenant }) => {
       const collection = getTenantDb(tenant).collection(entityName);
-      const savedEntity =await collection.updateOne(
+      const savedEntity = await collection.updateOne(
         { id: entity.id },
-        { ...entity }
+        { $set: { ...entity } }
       );
       return savedEntity;
+    },
+    getAllSchemas: async (tenant) => {
+      const collection = getTenantDb(tenant).collection(SCHEMAS_COLLECTION);
+      const result = (await collection.find({}).toArray()) as any;
+      return result;
     },
   };
 };

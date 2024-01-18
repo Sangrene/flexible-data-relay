@@ -27,7 +27,7 @@ export interface JSONSchema7Object {
 
 // Workaround for infinite type recursion
 // https://github.com/Microsoft/TypeScript/issues/3496#issuecomment-128553540
-export interface JSONSchema7Array extends Array<JSONSchema7Type> {}
+export type JSONSchema7Array = Array<JSONSchema7Type>;
 
 /**
  * Meta schema

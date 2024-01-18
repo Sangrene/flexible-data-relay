@@ -6,14 +6,19 @@ import { tenantInMemoryRepository } from "./tenants/tenantsInMemoryRepository.ts
 import { createAuthCore } from "./auth/auth.ts";
 import { createTenantCore } from "./tenants/tenant.core.ts";
 import { schemaCache } from "./graphql/graphqlSchemasCache.ts";
+import { createTenantsMongoRepository } from "./tenants/tenantsMongoRepository.ts";
+import { createEntitiesMongoRepository } from "./entities/entitiesMongoRepository.ts";
+import { getMasterDb, getTenantDb } from "./persistence/mongo.ts";
 
-const entityPersistence = createEntityInMemoryRepository();
-const tenantPersistence = tenantInMemoryRepository();
+// const entityPersistence = createEntityInMemoryRepository();
+// const tenantPersistence = tenantInMemoryRepository();
+const entityPersistence = createEntitiesMongoRepository({ getTenantDb });
+const tenantsPersistence = createTenantsMongoRepository(getMasterDb());
 const entityCore = createEntityCore({ persistence: entityPersistence });
-const cache = schemaCache(entityPersistence);
+const cache = await schemaCache(entityPersistence, tenantsPersistence);
 const tenantCore = createTenantCore({
   graphqlCacheSchemas: cache,
-  tenantPersistenceHandler: tenantPersistence,
+  tenantPersistenceHandler: tenantsPersistence,
 });
 const authCore = await createAuthCore({
   tenantCore,
