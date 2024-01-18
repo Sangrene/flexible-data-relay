@@ -24,5 +24,18 @@ export const createTenantsMongoRepository = (
       const result = (await collection.find({}).toArray()) as any;
       return result;
     },
+    getTenantByName: async (name) => {
+      const collection = masterDb.collection(TENANT_COLLECTION_NAME);
+      const tenant = (await collection.findOne({ name })) as any;
+      return tenant;
+    },
+    addAllowedAccessToTenant: async (name, access) => {
+      const collection = masterDb.collection(TENANT_COLLECTION_NAME);
+      const tenant = (await collection.updateOne(
+        { name },
+        { $push: { accessAllowed: access } }
+      )) as any;
+      return tenant;
+    },
   };
 };

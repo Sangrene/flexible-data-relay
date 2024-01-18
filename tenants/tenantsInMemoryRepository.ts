@@ -22,5 +22,18 @@ export const tenantInMemoryRepository = (): TenantRepository => {
     getTenantById,
     createTenant,
     getAllTenants,
+    getTenantByName: async (name: string) => {
+      return inMemoryStore.find((tenant) => tenant.name === name) || null;
+    },
+    addAllowedAccessToTenant: async (name, access) => {
+      for (let i = 0, n = inMemoryStore.length; i < n; i++) {
+        const tenant = inMemoryStore[i];
+        if (tenant.name === name) {
+          tenant.accessAllowed.push(access);
+          return tenant;
+        }
+      }
+      throw new Error(`No tenant with name ${name}`);
+    },
   };
 };

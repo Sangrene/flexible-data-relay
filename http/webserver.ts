@@ -39,8 +39,14 @@ export const runWebServer = async ({
     async (fastify, _, done) => {
       fastify.addHook("preHandler", async (req: RequestWithTenant) => {
         const tenant = await authCore.getTenantFromToken(req.headers.bearer);
+        if (!tenant) throw new Error("No tenant");
         req.tenant = tenant;
       });
+
+      const getTenantFromRequest = (request: FastifyRequest) => {
+        //@ts-ignore tenant is always there, and can't declare module to extends Request with deno
+        return request.tenant as Tenant;
+      };
 
       fastify.get("/:tenant", async function handler(request) {
         console.log(request.params);
@@ -48,11 +54,20 @@ export const runWebServer = async ({
         return { hello: "world" };
       });
 
+      fastify.post<{ Body: { tenantName: string } }>(
+        "/allow-access",
+        async (req) => {
+          return await tenantCore.allowTenantAccessToOwnResource({
+            me: getTenantFromRequest(req).name,
+            tenant: req.body.tenantName,
+          });
+        }
+      );
+
       fastify.post<{ Params: { tenant: string }; Body: { query: string } }>(
         "/:tenant/graphql",
         async function handler(request) {
-          //@ts-ignore tenant is always there, and can't declare module to extends Request with deno
-          const currentTenant: Tenant = request.tenant;
+          const currentTenant = getTenantFromRequest(request);
           if (currentTenant.name !== request.params.tenant) {
             authCore.accessGuard(currentTenant, {
               owner: request.params.tenant,
@@ -71,6 +86,12 @@ export const runWebServer = async ({
       fastify.post<{ Params: { entity: string; tenant: string } }>(
         "/:tenant/entity/:entity",
         async function handler(request) {
+          const currentTenant = getTenantFromRequest(request);
+          if (currentTenant.name !== request.params.tenant) {
+            authCore.accessGuard(currentTenant, {
+              owner: request.params.tenant,
+            });
+          }
           const entity = entityCore.createOrUpdateEntity({
             entity: request.body as any,
             tenant: request.params.tenant,

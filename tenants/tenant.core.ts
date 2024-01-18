@@ -33,10 +33,23 @@ export const createTenantCore = ({
     return await tenantPersistenceHandler.getTenantById(id);
   };
 
+  const allowTenantAccessToOwnResource = async ({
+    me,
+    tenant,
+  }: {
+    tenant: string;
+    me: string;
+  }) => {
+    return await tenantPersistenceHandler.addAllowedAccessToTenant(tenant, {
+      owner: me,
+    });
+  };
+
   return {
     getTenantGraphqlSchema,
     createTenant,
     getTenantById,
+    allowTenantAccessToOwnResource,
   };
 };
 
