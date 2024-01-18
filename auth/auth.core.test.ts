@@ -9,7 +9,7 @@ import { assertExists } from "https://deno.land/std@0.209.0/assert/assert_exists
 Deno.test(async function canGenerateTenantTokenFromIdAndCredentials() {
   const tenantPersistence = tenantInMemoryRepository();
   const entityPersistence = createEntityInMemoryRepository();
-  const cache = schemaCache(entityPersistence);
+  const cache = await schemaCache(entityPersistence);
 
   const tenantCore = createTenantCore({
     graphqlCacheSchemas: cache,
@@ -27,7 +27,7 @@ Deno.test(async function canGenerateTenantTokenFromIdAndCredentials() {
 Deno.test(async function canGetTenantUsingToken() {
   const tenantPersistence = tenantInMemoryRepository();
   const entityPersistence = createEntityInMemoryRepository();
-  const cache = schemaCache(entityPersistence);
+  const cache = await schemaCache(entityPersistence);
 
   const tenantCore = createTenantCore({
     graphqlCacheSchemas: cache,

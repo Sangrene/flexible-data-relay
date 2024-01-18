@@ -8,13 +8,13 @@ import { logger } from "../logging/logger.ts";
 
 export const schemaCache = async (
   entityPersistence: EntityPersistenceHandler,
-  tenantPersistence: TenantRepository
+  tenantPersistence?: TenantRepository
 ) => {
   const schemas: {
     [tenant: string]: { entities: JSONSchema7[]; graphqlSchema: GraphQLSchema };
   } = {};
-  const loadAllSchemas = async () => {
-    const tenants = await tenantPersistence.getAllTenants();
+  const loadAllSchemas = async (tenantRepo: TenantRepository) => {
+    const tenants = await tenantRepo.getAllTenants();
     const result = await Promise.all(
       tenants.map(async (tenant) => {
         return {
@@ -76,7 +76,9 @@ export const schemaCache = async (
       val.graphqlSchema = graphqlSchema;
     },
   });
-  await loadAllSchemas();
+  if (tenantPersistence) {
+    await loadAllSchemas(tenantPersistence);
+  }
   return {
     getTenantSchema,
   };

@@ -7,7 +7,7 @@ import { executeSourceAgainstSchema } from "../tenants/tenantSchema.ts";
 Deno.test(async function canQueryJustAddedEntityWithGraphQL() {
   const persistence = createEntityInMemoryRepository();
   const entityCore = createEntityCore({ persistence });
-  const store = schemaCache(persistence);
+  const store = await schemaCache(persistence);
   await entityCore.createOrUpdateEntity({
     entity: {
       id: "id",
