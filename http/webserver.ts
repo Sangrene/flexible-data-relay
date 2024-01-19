@@ -5,6 +5,8 @@ import Fastify, { FastifyRequest } from "fastify";
 import { AuthCore } from "../auth/auth.ts";
 import { Subscription, Tenant } from "../tenants/tenant.model.ts";
 import { TenantCore } from "../tenants/tenant.core.ts";
+import fastifySwaggerPlugin from "@fastify/swagger";
+import fastifySwaggerUIPlugin from "@fastify/swagger-ui";
 
 type RequestWithTenant = FastifyRequest & { tenant?: Tenant };
 
@@ -20,11 +22,75 @@ export const runWebServer = async ({
   schemasCache: TenantsCache;
 }) => {
   const fastify = Fastify({
-    logger: true,
+    logger: false,
+  });
+  await fastify.register(fastifySwaggerPlugin, {
+    swagger: {
+      info: {
+        title: "Flexible Data Relay",
+        description: "Flexible data relay API description",
+        version: "0.1.0",
+      },
+      host: "localhost",
+      schemes: ["http"],
+      consumes: ["application/json"],
+      produces: ["application/json"],
+      tags: [
+        { name: "tenant", description: "Tenant related end-points" },
+        { name: "entity", description: "Entity related end-points" },
+      ],
+    },
+  });
+  await fastify.register(fastifySwaggerUIPlugin, {
+    routePrefix: "/documentation",
+    uiConfig: {
+      docExpansion: "full",
+      deepLinking: false,
+    },
+    uiHooks: {
+      onRequest: function (request, reply, next) {
+        next();
+      },
+      preHandler: function (request, reply, next) {
+        next();
+      },
+    },
+    staticCSP: true,
+    transformStaticCSP: (header) => header,
+    transformSpecification: (swaggerObject, request, reply) => {
+      return swaggerObject;
+    },
+    transformSpecificationClone: true,
   });
 
   fastify.post<{ Body: { clientId: string; clientSecret: string } }>(
     "/token",
+    {
+      schema: {
+        description:
+          "Generate a token that should be use on all requests, in the Bearer header.",
+        tags: ["tenant"],
+        summary: "Generate token",
+        body: {
+          type: "object",
+          properties: {
+            clientId: { type: "string" },
+            clientSecret: {
+              type: "string",
+            },
+          },
+        },
+        response: {
+          201: {
+            description: "Successful response",
+            type: "object",
+            properties: {
+              Bearer: { type: "string" },
+            },
+          },
+        },
+      },
+    },
     async (req) => {
       return {
         Bearer: await authCore.generateTokenFromCredentials({
@@ -56,6 +122,31 @@ export const runWebServer = async ({
 
       fastify.post<{ Body: { tenantName: string } }>(
         "/allow-access",
+        {
+          schema: {
+            description: "Allow access to your entities to another tenant",
+            tags: ["tenant"],
+            summary: "Allow access to own entities",
+            body: {
+              type: "object",
+              properties: {
+                tenantName: { type: "string" },
+              },
+            },
+            headers: {
+              Bearer: { type: "string" },
+            },
+            response: {
+              201: {
+                description: "Successful response",
+                type: "object",
+                properties: {
+                  Bearer: { type: "string" },
+                },
+              },
+            },
+          },
+        },
         async (req) => {
           return await tenantCore.allowTenantAccessToOwnResource({
             currentTenantName: getTenantFromRequest(req).name,
@@ -66,6 +157,28 @@ export const runWebServer = async ({
 
       fastify.post<{ Params: { tenant: string }; Body: { query: string } }>(
         "/:tenant/graphql",
+        {
+          schema: {
+            description: "Get access to the graphql endpoint",
+            tags: ["tenant"],
+            summary: "Graphql endpoint",
+            body: {
+              type: "object",
+              properties: {
+                tenantName: { type: "string" },
+              },
+            },
+            headers: {
+              Bearer: { type: "string" },
+            },
+            response: {
+              201: {
+                description: "Successful response",
+                type: "object",
+              },
+            },
+          },
+        },
         async function handler(request) {
           tenantCore.accessGuard(getTenantFromRequest(request), {
             owner: request.params.tenant,
@@ -82,6 +195,28 @@ export const runWebServer = async ({
 
       fastify.post<{ Params: { entity: string; tenant: string } }>(
         "/:tenant/entity/:entity",
+        {
+          schema: {
+            description: "Create or update an entity",
+            tags: ["entity"],
+            summary: "Add entity",
+            body: {
+              type: "object",
+              properties: {
+                id: { type: "string" },
+              },
+            },
+            headers: {
+              Bearer: { type: "string" },
+            },
+            response: {
+              201: {
+                description: "Successful response",
+                type: "object",
+              },
+            },
+          },
+        },
         async function handler(request) {
           tenantCore.accessGuard(getTenantFromRequest(request), {
             owner: request.params.tenant,

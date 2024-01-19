@@ -21,12 +21,16 @@ export const createEntitiesMongoRepository = ({
     },
     createOrUpdateEntity: async ({ entity, entityName, tenant }) => {
       const collection = getTenantDb(tenant).collection(entityName);
-      const savedEntity = await collection.updateOne(
+      const { matchedCount, upsertedId } = await collection.updateOne(
         { id: entity.id },
         { $set: { ...entity } },
         { upsert: true }
       );
-      return savedEntity;
+
+      return {
+        entity: { ...entity, _id: upsertedId?.toString() },
+        action: matchedCount > 0 ? "updated" : "created",
+      };
     },
     getEntityList: async ({ entityName, query, tenant }) => {
       const collection = getTenantDb(tenant).collection(entityName);

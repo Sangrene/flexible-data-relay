@@ -107,9 +107,17 @@ export const createEntityInMemoryRepository = (): EntityRepository => {
         (item) => item.id === entity.id
       );
       if (index >= 0) {
-        updateEntity({ entityName, entity, tenant });
+        await updateEntity({ entityName, entity, tenant });
+        return {
+          action: "updated",
+          entity,
+        };
       } else {
-        createEntity({ entityName, entity, tenant });
+        await createEntity({ entityName, entity, tenant });
+        return {
+          action: "created",
+          entity,
+        };
       }
     },
     getAllSchemas: async (tenant: string) => {

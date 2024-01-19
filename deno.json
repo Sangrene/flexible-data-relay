@@ -11,7 +11,9 @@
     "graphql": "npm:graphql",
     "mongodb": "npm:mongodb",
     "ts-simple-event-bus": "npm:ts-simple-event-bus@2.0.5",
-    "uuid": "npm:uuid"
+    "uuid": "npm:uuid",
+    "@fastify/swagger": "npm:@fastify/swagger",
+    "@fastify/swagger-ui": "npm:@fastify/swagger-ui"
   },
   "lint": {
     "exclude": ["migrations/"],

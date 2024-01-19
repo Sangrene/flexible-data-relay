@@ -25,7 +25,7 @@ export interface EntityRepository {
     entityName: string;
     entity: object & { id: string };
     tenant: string;
-  }) => Promise<any>;
+  }) => Promise<{ action: "created" | "updated"; entity: Record<string, any> }>;
   getEntitySchema: (p: {
     entityName: string;
     tenant: string;

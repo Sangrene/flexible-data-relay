@@ -184,23 +184,22 @@ export const createGraphqlSchemaFromEntitiesSchema = (
         entityCore.getEntityById({ tenant, entityName: entity.name, id }),
     };
 
-    // const fieldList: GraphQLFieldConfig<any, any, any> = {
-    //   type: new GraphQLList(computeRecursiveGraphQlObjectType(
-    //     entity.name,
-    //     entity.schema
-    //   ) as GraphQLObjectType),
-    //   args: {
-    //     query: {
-    //       description: "MongoDB query string",
-    //       type: new GraphQLNonNull(GraphQLString),
-    //     },
-    //   },
-    //   resolve: (_source, { query }) =>
-    //     handler.getEntityList({ tenant, entityName: entity.name, query }),
-    // };
+    const fieldList: GraphQLFieldConfig<any, any, any> = {
+      type: new GraphQLList(field.type),
+      args: {
+        query: {
+          description: "MongoDB query string",
+          type: new GraphQLNonNull(GraphQLString),
+        },
+      },
+      resolve: (_source, { query }) =>
+        entityCore.getEntityList({ tenant, entityName: entity.name, query }),
+    };
+
     // return { ...acc, [entity.name]: field, [`${entity.name}List`]: fieldList };
-    return { ...acc, [entity.name]: field };
+    return { ...acc, [entity.name]: field, [`${entity.name}List`]: fieldList };
   }, {});
+  console.log(fields);
   const schema = new GraphQLSchema({
     query: new GraphQLObjectType({
       name: "Query",

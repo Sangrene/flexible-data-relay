@@ -50,8 +50,13 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
       throw new Error(
         "Entity should have an 'id' field that serves as identifier"
       );
-    await persistence.createOrUpdateEntity({ tenant, entityName, entity });
+    const { action } = await persistence.createOrUpdateEntity({
+      tenant,
+      entityName,
+      entity,
+    });
     processNewEntitySchema({ entityName, entity, tenant });
+    eventBus.publish({ queue: `entity.${action}`, message: { entity } });
     return entity;
   };
 
@@ -71,11 +76,20 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
     return persistence.getEntity(p);
   };
 
+  const getEntityList = async (p: {
+    entityName: string;
+    query: string;
+    tenant: string;
+  }) => {
+    return persistence.getEntityList(p);
+  };
+
   return {
     createOrUpdateEntity,
     getEntitySchema,
     getAllEntitiesSchema,
     getEntityById,
+    getEntityList,
   };
 };
 

@@ -20,7 +20,6 @@ export const createSubscriptionManager = ({
   eventBus.subscribe({
     queue: "entity.updated",
     callback: async ({ entity }) => {
-      // Should use cache version of subscription here, not query everytime
       const tenants = await tenantCore.getAllTenants();
       for (let i = 0, n = tenants.length; i < n; i++) {
         const tenant = tenants[i];
@@ -30,6 +29,24 @@ export const createSubscriptionManager = ({
               subscription: sub,
               entity,
               action: "updated",
+            });
+          });
+        });
+      }
+    },
+  });
+  eventBus.subscribe({
+    queue: "entity.created",
+    callback: async ({ entity }) => {
+      const tenants = await tenantCore.getAllTenants();
+      for (let i = 0, n = tenants.length; i < n; i++) {
+        const tenant = tenants[i];
+        tenant.subscriptions.forEach((sub) => {
+          subscriptionPlugins.forEach((plugin) => {
+            plugin.publishMessage({
+              subscription: sub,
+              entity,
+              action: "created",
             });
           });
         });
