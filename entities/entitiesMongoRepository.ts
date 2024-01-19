@@ -1,5 +1,5 @@
 import { Db } from "mongodb";
-import { EntityPersistenceHandler } from "./entities.persistence.ts";
+import { EntityRepository } from "./entities.persistence.ts";
 import { JSONSchema7 } from "../json-schema/jsonSchemaTypes.ts";
 
 const SCHEMAS_COLLECTION = "schemas";
@@ -7,7 +7,7 @@ export const createEntitiesMongoRepository = ({
   getTenantDb,
 }: {
   getTenantDb: (tenant: string) => Db;
-}): EntityPersistenceHandler => {
+}): EntityRepository => {
   return {
     getEntity: async ({ entityName, id, tenant }) => {
       const collection = getTenantDb(tenant).collection(entityName);

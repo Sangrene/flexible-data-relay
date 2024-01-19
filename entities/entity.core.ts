@@ -1,12 +1,12 @@
 import { eventBus } from "../event/eventBus.ts";
 import { jsonToJsonSchema } from "../json-schema/jsonToJsonSchema.ts";
-import { EntityPersistenceHandler } from "./entities.persistence.ts";
+import { EntityRepository } from "./entities.persistence.ts";
 import isEqual from "https://deno.land/x/lodash@4.17.4-es/isEqual.js";
 
 interface EntityCoreArgs {
-  persistence: EntityPersistenceHandler;
+  persistence: EntityRepository;
 }
-export const entityCore = ({ persistence }: EntityCoreArgs) => {
+export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
   const processNewEntitySchema = async ({
     entity,
     entityName,
@@ -46,7 +46,10 @@ export const entityCore = ({ persistence }: EntityCoreArgs) => {
     entity: any & { id: string };
     tenant: string;
   }) => {
-    if (!entity.id) throw new Error("Entity should have an 'id' field that serves as identifier");
+    if (!entity.id)
+      throw new Error(
+        "Entity should have an 'id' field that serves as identifier"
+      );
     await persistence.createOrUpdateEntity({ tenant, entityName, entity });
     processNewEntitySchema({ entityName, entity, tenant });
     return entity;
@@ -56,7 +59,24 @@ export const entityCore = ({ persistence }: EntityCoreArgs) => {
     return persistence.getEntitySchema({ tenant, entityName });
   };
 
-  return { createOrUpdateEntity, getEntitySchema };
+  const getAllEntitiesSchema = (tenant: string) => {
+    return persistence.getAllSchemas(tenant);
+  };
+
+  const getEntityById = (p: {
+    entityName: string;
+    id: string;
+    tenant: string;
+  }) => {
+    return persistence.getEntity(p);
+  };
+
+  return {
+    createOrUpdateEntity,
+    getEntitySchema,
+    getAllEntitiesSchema,
+    getEntityById,
+  };
 };
 
-export type EntityCore = ReturnType<typeof entityCore>;
+export type EntityCore = ReturnType<typeof createEntityCore>;

@@ -5,16 +5,21 @@ import { tenantInMemoryRepository } from "../tenants/tenantsInMemoryRepository.t
 import { createEntityInMemoryRepository } from "../entities/entitiesinMemoryRepository.ts";
 import { createTenantCache } from "../graphql/graphqlSchemasCache.ts";
 import { assertExists } from "https://deno.land/std@0.209.0/assert/assert_exists.ts";
+import { createEntityCore } from "../entities/entity.core.ts";
 
 Deno.test(async function canGenerateTenantTokenFromIdAndCredentials() {
   const tenantPersistence = tenantInMemoryRepository();
   const entityPersistence = createEntityInMemoryRepository();
-  const cache = await createTenantCache(entityPersistence);
-
+  const entityCore = createEntityCore({ persistence: entityPersistence });
   const tenantCore = createTenantCore({
-    graphqlCacheSchemas: cache,
     tenantPersistenceHandler: tenantPersistence,
   });
+  const cache = await createTenantCache(
+    entityCore,
+    await tenantCore.getAllSchemas(entityCore)
+  );
+  tenantCore.setCache(cache);
+
   const authCore = await createAuthCore({ tenantCore });
   const newTenant = await tenantCore.createTenant("tenant");
   const token = await authCore.generateTokenFromCredentials({
@@ -27,12 +32,16 @@ Deno.test(async function canGenerateTenantTokenFromIdAndCredentials() {
 Deno.test(async function canGetTenantUsingToken() {
   const tenantPersistence = tenantInMemoryRepository();
   const entityPersistence = createEntityInMemoryRepository();
-  const cache = await createTenantCache(entityPersistence);
-
+  const entityCore = createEntityCore({ persistence: entityPersistence });
   const tenantCore = createTenantCore({
-    graphqlCacheSchemas: cache,
     tenantPersistenceHandler: tenantPersistence,
   });
+  const cache = await createTenantCache(
+    entityCore,
+    await tenantCore.getAllSchemas(entityCore)
+  );
+  tenantCore.setCache(cache);
+
   const authCore = await createAuthCore({ tenantCore });
   const newTenant = await tenantCore.createTenant("tenant");
   const token = await authCore.generateTokenFromCredentials({
@@ -42,4 +51,3 @@ Deno.test(async function canGetTenantUsingToken() {
   const gottenTenant = await authCore.getTenantFromToken(token);
   assertEquals(newTenant, gottenTenant);
 });
-

@@ -1,5 +1,4 @@
 import { TenantCore } from "../tenants/tenant.core.ts";
-import { Tenant } from "../tenants/tenant.model.ts";
 import createJwtService from "./jwtService.ts";
 
 interface AuthServerProps {

@@ -1,6 +1,6 @@
 import { JSONSchema7 } from "../json-schema/jsonSchemaTypes.ts";
 
-export interface EntityPersistenceHandler {
+export interface EntityRepository {
   getEntity: <T>(p: {
     entityName: string;
     id: string;

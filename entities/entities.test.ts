@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.209.0/assert/assert_equals.ts";
-import { entityCore as createEntityCore } from "./entity.core.ts";
+import { createEntityCore as createEntityCore } from "./entity.core.ts";
 import { createEntityInMemoryRepository } from "./entitiesinMemoryRepository.ts";
 import { createTenantCache } from "../graphql/graphqlSchemasCache.ts";
 import { executeSourceAgainstSchema } from "../tenants/graphqlExecutionManager.ts";
@@ -7,7 +7,7 @@ import { executeSourceAgainstSchema } from "../tenants/graphqlExecutionManager.t
 Deno.test(async function canQueryJustAddedEntityWithGraphQL() {
   const persistence = createEntityInMemoryRepository();
   const entityCore = createEntityCore({ persistence });
-  const store = await createTenantCache(persistence);
+  const store = await createTenantCache(entityCore);
   await entityCore.createOrUpdateEntity({
     entity: {
       id: "id",

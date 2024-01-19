@@ -1,6 +1,6 @@
 import "https://deno.land/std@0.209.0/dotenv/load.ts";
 import { runWebServer } from "./http/webserver.ts";
-import { entityCore as createEntityCore } from "./entities/entity.core.ts";
+import { createEntityCore as createEntityCore } from "./entities/entity.core.ts";
 // import { createEntityInMemoryRepository } from "./entities/entitiesinMemoryRepository.ts";
 // import { tenantInMemoryRepository } from "./tenants/tenantsInMemoryRepository.ts";
 import { createAuthCore } from "./auth/auth.ts";
@@ -9,21 +9,37 @@ import { createTenantCache } from "./graphql/graphqlSchemasCache.ts";
 import { createTenantsMongoRepository } from "./tenants/tenantsMongoRepository.ts";
 import { createEntitiesMongoRepository } from "./entities/entitiesMongoRepository.ts";
 import { getMasterDb, getTenantDb } from "./persistence/mongo.ts";
+import { createSubscriptionManager } from "./subscription/subscriptionManager.ts";
+import { createWebhookSubscriptionPlugin } from "./subscription/webhookSubscription.ts";
 
 // const entityPersistence = createEntityInMemoryRepository();
 // const tenantPersistence = tenantInMemoryRepository();
+
+// Repositories
 const entityPersistence = createEntitiesMongoRepository({ getTenantDb });
 const tenantsPersistence = createTenantsMongoRepository(getMasterDb());
+
+// Cores
 const entityCore = createEntityCore({ persistence: entityPersistence });
-const cache = await createTenantCache(entityPersistence, tenantsPersistence);
 const tenantCore = createTenantCore({
-  graphqlCacheSchemas: cache,
   tenantPersistenceHandler: tenantsPersistence,
 });
 const authCore = await createAuthCore({
   tenantCore,
 });
 
+// Services
+const cache = await createTenantCache(
+  entityCore,
+  await tenantCore.getAllSchemas(entityCore)
+);
+const webhookSubscriptionPlugin = createWebhookSubscriptionPlugin();
+createSubscriptionManager({
+  subscriptionPlugins: [webhookSubscriptionPlugin],
+  tenantCore,
+});
+
+// Start
 runWebServer({
   entityCore,
   authCore,

@@ -1,12 +1,12 @@
 import { assertEquals } from "https://deno.land/std@0.209.0/assert/assert_equals.ts";
 import { createEntityInMemoryRepository } from "./entitiesinMemoryRepository.ts";
-import { entityCore } from "./entity.core.ts";
+import { createEntityCore } from "./entity.core.ts";
 import { jsonToJsonSchema } from "../json-schema/jsonToJsonSchema.ts";
 
 Deno.test(async function createsEntityIfItDoesntExistYet() {
   const ENTITY = { id: "id", a: 2, b: "truc" };
   const persistence = createEntityInMemoryRepository();
-  const core = entityCore({ persistence });
+  const core = createEntityCore({ persistence });
   await core.createOrUpdateEntity({
     entityName: "testEntity",
     entity: ENTITY,
@@ -24,7 +24,7 @@ Deno.test(async function updateEntityIfItAlreadyExists() {
   const ENTITY = { id: "id", a: 2, b: "truc" };
   const UPDATED_ENTITY = { id: "id", a: 2, b: "trac" };
   const persistence = createEntityInMemoryRepository();
-  const core = entityCore({ persistence });
+  const core = createEntityCore({ persistence });
   await core.createOrUpdateEntity({
     entityName: "testEntity",
     entity: ENTITY,
@@ -46,7 +46,7 @@ Deno.test(async function updateEntityIfItAlreadyExists() {
 Deno.test(async function storeEntitySchemaOnCreateEntity() {
   const ENTITY = { id: "id", a: 2, b: "truc" };
   const persistence = createEntityInMemoryRepository();
-  const core = entityCore({ persistence });
+  const core = createEntityCore({ persistence });
   await core.createOrUpdateEntity({
     entityName: "testEntity",
     entity: ENTITY,
@@ -63,7 +63,7 @@ Deno.test(
     const ENTITY = { id: "id", a: 2, b: "truc" };
     const OTHER_ENTITY = { id: "id2", a: 2, b: "truc", c: true };
     const persistence = createEntityInMemoryRepository();
-    const core = entityCore({ persistence });
+    const core = createEntityCore({ persistence });
     await core.createOrUpdateEntity({
       entityName: "testEntity",
       entity: ENTITY,

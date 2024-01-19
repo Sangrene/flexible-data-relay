@@ -1,5 +1,3 @@
-import { ObjectId } from "mongodb";
-
 type Permission = "read";
 
 export interface Access {

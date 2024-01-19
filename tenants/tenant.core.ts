@@ -1,4 +1,6 @@
+import { EntityCore } from "../entities/entity.core.ts";
 import { TenantsCache } from "../graphql/graphqlSchemasCache.ts";
+import { createGraphqlSchemaFromEntitiesSchema } from "../graphql/jsonToGraphql.ts";
 import { Subscription, Tenant } from "./tenant.model.ts";
 import { TenantRepository } from "./tenant.persistence.ts";
 import {
@@ -8,14 +10,13 @@ import {
 
 interface TenantCoreArgs {
   tenantPersistenceHandler: TenantRepository;
-  graphqlCacheSchemas: TenantsCache;
 }
 export const createTenantCore = ({
-  graphqlCacheSchemas,
   tenantPersistenceHandler,
 }: TenantCoreArgs) => {
+  let tenantsCache: TenantsCache;
   const getTenantGraphqlSchema = async ({ tenant }: { tenant: string }) => {
-    return graphqlCacheSchemas.getTenantSchema(tenant);
+    return tenantsCache.getTenantSchema(tenant);
   };
 
   const createTenant = async (tenantName: string) => {
@@ -42,9 +43,12 @@ export const createTenantCore = ({
     allowedTenantName: string;
     currentTenantName: string;
   }) => {
-    return await tenantPersistenceHandler.addAllowedAccessToTenant(allowedTenantName, {
-      owner: currentTenantName,
-    });
+    return await tenantPersistenceHandler.addAllowedAccessToTenant(
+      allowedTenantName,
+      {
+        owner: currentTenantName,
+      }
+    );
   };
 
   const createSubscription = async ({
@@ -65,10 +69,46 @@ export const createTenantCore = ({
   };
 
   const accessGuard = (tenant: Tenant, { owner }: { owner: string }) => {
-    if (tenant.name === owner) return true;;
+    if (tenant.name === owner) return true;
     const hasAccess = tenant.accessAllowed.some((item) => item.owner === owner);
     if (!hasAccess) throw new Error("You don't have access to this resource");
     return true;
+  };
+
+  const getAllTenants = async () => {
+    return tenantPersistenceHandler.getAllTenants();
+  };
+
+  const setCache = (cache: TenantsCache) => {
+    tenantsCache = cache;
+  };
+
+  const getAllSchemas = async (entityCore: EntityCore) => {
+    const tenants = await tenantPersistenceHandler.getAllTenants();
+    const result = await Promise.all(
+      tenants.map(async (tenant) => {
+        return {
+          schemas: await entityCore.getAllEntitiesSchema(tenant.name),
+          tenant,
+        };
+      })
+    );
+    const schemas: Record<string, any> = {};
+    result.forEach((res) => {
+      const graphqlSchema = createGraphqlSchemaFromEntitiesSchema(
+        res.tenant.name,
+        res.schemas.map((entity) => ({
+          name: entity.title || "",
+          schema: entity,
+        })),
+        entityCore
+      );
+      schemas[res.tenant.name] = {
+        entities: res.schemas,
+        graphqlSchema,
+      };
+    });
+    return schemas;
   };
 
   return {
@@ -78,6 +118,9 @@ export const createTenantCore = ({
     allowTenantAccessToOwnResource,
     createSubscription,
     accessGuard,
+    getAllTenants,
+    setCache,
+    getAllSchemas,
   };
 };
 

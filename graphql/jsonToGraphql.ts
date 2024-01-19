@@ -13,7 +13,7 @@ import {
   GraphQLString,
 } from "graphql";
 import { JSONSchema7 } from "../json-schema/jsonSchemaTypes.ts";
-import { EntityPersistenceHandler } from "../entities/entities.persistence.ts";
+import { EntityCore } from "../entities/entity.core.ts";
 
 interface ObjMap<T> {
   [key: string]: T;
@@ -164,7 +164,7 @@ export const computeRecursiveGraphQlObjectType = (
 export const createGraphqlSchemaFromEntitiesSchema = (
   tenant: string,
   entitiesSchema: { schema: JSONSchema7; name: string }[],
-  handler: EntityPersistenceHandler
+  entityCore: EntityCore
 ) => {
   const fields = entitiesSchema.reduce<
     ObjMap<GraphQLFieldConfig<any, any, any>>
@@ -181,7 +181,7 @@ export const createGraphqlSchemaFromEntitiesSchema = (
         },
       },
       resolve: (_source, { id }) =>
-        handler.getEntity({ tenant, entityName: entity.name, id }),
+        entityCore.getEntityById({ tenant, entityName: entity.name, id }),
     };
 
     // const fieldList: GraphQLFieldConfig<any, any, any> = {
