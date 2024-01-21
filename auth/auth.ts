@@ -34,9 +34,18 @@ export const createAuthCore = async ({ tenantCore }: AuthServerProps) => {
     return tenant;
   };
 
+  const generateAdminTokenFromSecret = async (secret: string) => {
+    const adminSecret = Deno.env.get("ADMIN_SECRET");
+    if (!adminSecret) return "Admin secret is not setup";
+    if (secret !== adminSecret) return "Admin ";
+    const token = await jwtService.createJWT({ admin: true });
+    return token;
+  };
+
   return {
     generateTokenFromCredentials,
     getTenantFromToken,
+    generateAdminTokenFromSecret,
   };
 };
 
