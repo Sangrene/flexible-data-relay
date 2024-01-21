@@ -199,7 +199,6 @@ export const createGraphqlSchemaFromEntitiesSchema = (
     // return { ...acc, [entity.name]: field, [`${entity.name}List`]: fieldList };
     return { ...acc, [entity.name]: field, [`${entity.name}List`]: fieldList };
   }, {});
-  console.log(fields);
   const schema = new GraphQLSchema({
     query: new GraphQLObjectType({
       name: "Query",
