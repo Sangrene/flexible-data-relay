@@ -34,7 +34,9 @@ const createJwtService = async () => {
     keyConfig.keyUsages
   );
 
-  const createJWT = async (payload: Record<string, string | number>) => {
+  const createJWT = async (
+    payload: Record<string, string | number | boolean> 
+  ) => {
     const jwt = await create(
       { alg: "HS512", typ: "JWT" },
       { ...payload, exp: getNumericDate(60 * 60 * 24 * 30) },

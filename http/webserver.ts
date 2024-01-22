@@ -7,20 +7,27 @@ import { Subscription, Tenant } from "../tenants/tenant.model.ts";
 import { TenantCore } from "../tenants/tenant.core.ts";
 import fastifySwaggerPlugin from "@fastify/swagger";
 import fastifySwaggerUIPlugin from "@fastify/swagger-ui";
+import { createAppRoutes } from "./appRoutes.ts";
+import { createAdminRoutes } from "./adminRoutes.ts";
 
 type RequestWithTenant = FastifyRequest & { tenant?: Tenant };
 
+export const getTenantFromRequest = (request: FastifyRequest) => {
+  //@ts-ignore tenant is always there, and can't declare module to extends Request with deno
+  return request.tenant as Tenant;
+};
+export interface WebServerProps {
+  entityCore: EntityCore;
+  tenantCore: TenantCore;
+  authCore: AuthCore;
+  schemasCache: TenantsCache;
+}
 export const runWebServer = async ({
   entityCore,
   tenantCore,
   authCore,
   schemasCache,
-}: {
-  entityCore: EntityCore;
-  tenantCore: TenantCore;
-  authCore: AuthCore;
-  schemasCache: TenantsCache;
-}) => {
+}: WebServerProps) => {
   const fastify = Fastify({
     logger: false,
   });
@@ -101,6 +108,17 @@ export const runWebServer = async ({
     }
   );
 
+  fastify.post<{ Body: { secret: string } }>("/admin-token", async (req) => {
+    return await authCore.generateAdminTokenFromSecret(req.body.secret);
+  });
+
+  await createAdminRoutes(fastify, {
+    authCore,
+    entityCore,
+    schemasCache,
+    tenantCore,
+  });
+
   await fastify.register(
     async (fastify, _, done) => {
       fastify.addHook("preHandler", async (req: RequestWithTenant) => {
@@ -109,142 +127,13 @@ export const runWebServer = async ({
         req.tenant = tenant;
       });
 
-      const getTenantFromRequest = (request: FastifyRequest) => {
-        //@ts-ignore tenant is always there, and can't declare module to extends Request with deno
-        return request.tenant as Tenant;
-      };
-
-      fastify.get("/:tenant", async function handler(request) {
-        console.log(request.params);
-
-        return { hello: "world" };
+      createAppRoutes(fastify, {
+        authCore,
+        entityCore,
+        schemasCache,
+        tenantCore,
       });
 
-      fastify.post<{ Body: { tenantName: string } }>(
-        "/allow-access",
-        {
-          schema: {
-            description: "Allow access to your entities to another tenant",
-            tags: ["tenant"],
-            summary: "Allow access to own entities",
-            body: {
-              type: "object",
-              properties: {
-                tenantName: { type: "string" },
-              },
-            },
-            headers: {
-              Bearer: { type: "string" },
-            },
-            response: {
-              201: {
-                description: "Successful response",
-                type: "object",
-                properties: {
-                  Bearer: { type: "string" },
-                },
-              },
-            },
-          },
-        },
-        async (req) => {
-          return await tenantCore.allowTenantAccessToOwnResource({
-            currentTenantName: getTenantFromRequest(req).name,
-            allowedTenantName: req.body.tenantName,
-          });
-        }
-      );
-
-      fastify.post<{ Params: { tenant: string }; Body: { query: string } }>(
-        "/:tenant/graphql",
-        {
-          schema: {
-            description: "Get access to the graphql endpoint",
-            tags: ["tenant"],
-            summary: "Graphql endpoint",
-            body: {
-              type: "object",
-              properties: {
-                tenantName: { type: "string" },
-              },
-            },
-            headers: {
-              Bearer: { type: "string" },
-            },
-            response: {
-              201: {
-                description: "Successful response",
-                type: "object",
-              },
-            },
-          },
-        },
-        async function handler(request) {
-          tenantCore.accessGuard(getTenantFromRequest(request), {
-            owner: request.params.tenant,
-          });
-
-          const result = await executeSourceAgainstSchema({
-            source: request.body.query,
-            schemasCache: schemasCache,
-            tenant: request.params.tenant,
-          });
-          return result;
-        }
-      );
-
-      fastify.post<{ Params: { entity: string; tenant: string } }>(
-        "/:tenant/entity/:entity",
-        {
-          schema: {
-            description: "Create or update an entity",
-            tags: ["entity"],
-            summary: "Add entity",
-            body: {
-              type: "object",
-              properties: {
-                id: { type: "string" },
-              },
-            },
-            headers: {
-              Bearer: { type: "string" },
-            },
-            response: {
-              201: {
-                description: "Successful response",
-                type: "object",
-              },
-            },
-          },
-        },
-        async function handler(request) {
-          tenantCore.accessGuard(getTenantFromRequest(request), {
-            owner: request.params.tenant,
-          });
-
-          const entity = entityCore.createOrUpdateEntity({
-            entity: request.body as any,
-            tenant: request.params.tenant,
-            entityName: request.params.entity,
-          });
-          return entity;
-        }
-      );
-
-      fastify.post<{
-        Params: { tenant: string };
-        Body: { subscription: Subscription };
-      }>("/:tenant/subscribe", async function handler(request) {
-        const currentTenant = getTenantFromRequest(request);
-        tenantCore.accessGuard(currentTenant, {
-          owner: request.params.tenant,
-        });
-
-        return await tenantCore.createSubscription({
-          subscription: request.body.subscription,
-          tenant: currentTenant,
-        });
-      });
       done();
     },
     { prefix: "/app" }

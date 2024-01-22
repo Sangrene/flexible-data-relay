@@ -8,6 +8,15 @@ import { tenantInMemoryRepository } from "./tenantsInMemoryRepository.ts";
 import { createTenantCache } from "../graphql/graphqlSchemasCache.ts";
 import { createEntityInMemoryRepository } from "../entities/entitiesinMemoryRepository.ts";
 import { createEntityCore } from "../entities/entity.core.ts";
+import {
+  assertSpyCall,
+  assertSpyCalls,
+  spy,
+} from "https://deno.land/std@0.212.0/testing/mock.ts";
+import { createWebhookSubscriptionPlugin } from "../subscription/webhookSubscription.ts";
+import { createSubscriptionManager } from "../subscription/subscriptionManager.ts";
+import { Timeout } from "https://deno.land/x/timeout/mod.ts";
+import * as mf from "https://deno.land/x/mock_fetch@0.3.0/mod.ts";
 
 Deno.test(async function createTenantWithRightSchema() {
   const tenantPersistence = tenantInMemoryRepository();
@@ -47,17 +56,17 @@ Deno.test(async function canTenantHaveAccessToHisOwnResource() {
 Deno.test(
   async function tenantCantHaveAccessToAnotherOwnerWithoutAuthorization() {
     const tenantPersistence = tenantInMemoryRepository();
-  const entityPersistence = createEntityInMemoryRepository();
-  const entityCore = createEntityCore({ persistence: entityPersistence });
+    const entityPersistence = createEntityInMemoryRepository();
+    const entityCore = createEntityCore({ persistence: entityPersistence });
 
-  const tenantCore = createTenantCore({
-    tenantPersistenceHandler: tenantPersistence,
-  });
-  const cache = await createTenantCache(
-    entityCore,
-    await tenantCore.getAllSchemas(entityCore)
-  );
-  tenantCore.setCache(cache);
+    const tenantCore = createTenantCore({
+      tenantPersistenceHandler: tenantPersistence,
+    });
+    const cache = await createTenantCache(
+      entityCore,
+      await tenantCore.getAllSchemas(entityCore)
+    );
+    tenantCore.setCache(cache);
     const tenant = await tenantCore.createTenant("tenant");
     assertThrows(() => tenantCore.accessGuard(tenant, { owner: "" }), Error);
   }
@@ -66,17 +75,17 @@ Deno.test(
 Deno.test(
   async function tenantCanAccessAnotherOwnerResourceWithAuthorization() {
     const tenantPersistence = tenantInMemoryRepository();
-  const entityPersistence = createEntityInMemoryRepository();
-  const entityCore = createEntityCore({ persistence: entityPersistence });
+    const entityPersistence = createEntityInMemoryRepository();
+    const entityCore = createEntityCore({ persistence: entityPersistence });
 
-  const tenantCore = createTenantCore({
-    tenantPersistenceHandler: tenantPersistence,
-  });
-  const cache = await createTenantCache(
-    entityCore,
-    await tenantCore.getAllSchemas(entityCore)
-  );
-  tenantCore.setCache(cache);
+    const tenantCore = createTenantCore({
+      tenantPersistenceHandler: tenantPersistence,
+    });
+    const cache = await createTenantCache(
+      entityCore,
+      await tenantCore.getAllSchemas(entityCore)
+    );
+    tenantCore.setCache(cache);
     await tenantCore.createTenant("tenant1");
     await tenantCore.createTenant("tenant2");
     await tenantCore.allowTenantAccessToOwnResource({
@@ -87,3 +96,65 @@ Deno.test(
     assertEquals(tenantCore.accessGuard(tenant2!, { owner: "tenant1" }), true);
   }
 );
+
+Deno.test(async function sendWebhookRequestIfSubscribedAndEntityIsUpdated() {
+  mf.install();
+  mf.mock("GET@/test", (_req, params) => {
+    return new Response("",{
+      status: 200,
+    });
+  });
+  const tenantPersistence = tenantInMemoryRepository();
+  const entityPersistence = createEntityInMemoryRepository();
+  const entityCore = createEntityCore({ persistence: entityPersistence });
+
+  const tenantCore = createTenantCore({
+    tenantPersistenceHandler: tenantPersistence,
+  });
+  const cache = await createTenantCache(
+    entityCore,
+    await tenantCore.getAllSchemas(entityCore)
+  );
+  tenantCore.setCache(cache);
+  const webhookSubscriptionPlugin = createWebhookSubscriptionPlugin();
+  const publishMessageSpy = spy(webhookSubscriptionPlugin, "publishMessage");
+
+  createSubscriptionManager({
+    subscriptionPlugins: [webhookSubscriptionPlugin],
+    tenantCore,
+  });
+
+  await tenantCore.createTenant("tenant1");
+  const tenant2 = await tenantCore.createTenant("tenant2");
+  await tenantCore.allowTenantAccessToOwnResource({
+    currentTenantName: "tenant1",
+    allowedTenantName: "tenant2",
+  });
+
+  const subscription = await tenantCore.createSubscription({
+    subscription: {
+      owner: "tenant1",
+      entityName: "entityTest",
+      webhook: {
+        url: "https://localhost:3000/test",
+      },
+    },
+    tenant: tenant2,
+  });
+
+  await entityCore.createOrUpdateEntity({
+    entity: { name: "test", id: "id" },
+    entityName: "entityTest",
+    tenant: "tenant1",
+  });
+  await Timeout.wait(500);
+  assertSpyCall(publishMessageSpy, 0, {
+    args: [
+      {
+        subscription,
+        action: "created",
+        entity: { name: "test", id: "id" },
+      },
+    ],
+  });
+});

@@ -83,6 +83,3 @@ Deno.test(
   }
 );
 
-// Deno.test(async function sendWebhookRequestIfSubscribedAndEntityIsUpdated(){
-
-// })
