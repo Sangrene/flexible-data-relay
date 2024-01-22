@@ -11,6 +11,7 @@ import { createEntitiesMongoRepository } from "./entities/entitiesMongoRepositor
 import { getMasterDb, getTenantDb } from "./persistence/mongo.ts";
 import { createSubscriptionManager } from "./subscription/subscriptionManager.ts";
 import { createWebhookSubscriptionPlugin } from "./subscription/webhookSubscription.ts";
+import { createAMQPSubscriptionPlugin } from "./subscription/amqpSubscription.ts";
 
 // const entityPersistence = createEntityInMemoryRepository();
 // const tenantPersistence = tenantInMemoryRepository();
@@ -33,9 +34,17 @@ const cache = await createTenantCache(
   entityCore,
   await tenantCore.getAllSchemas(entityCore)
 );
-const webhookSubscriptionPlugin = createWebhookSubscriptionPlugin();
+const subscriptionPlugins = [];
+subscriptionPlugins.push(createWebhookSubscriptionPlugin());
+if (Deno.env.get("RABBIT_MQ_CONNECTION_STRING")) {
+  subscriptionPlugins.push(
+    await createAMQPSubscriptionPlugin({
+      connectionString: Deno.env.get("RABBIT_MQ_CONNECTION_STRING")!,
+    })
+  );
+}
 createSubscriptionManager({
-  subscriptionPlugins: [webhookSubscriptionPlugin],
+  subscriptionPlugins: subscriptionPlugins,
   tenantCore,
 });
 

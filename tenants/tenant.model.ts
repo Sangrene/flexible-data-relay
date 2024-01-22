@@ -10,7 +10,7 @@ export interface Subscription {
   key: string;
   queue?: {
     queueName: string;
-    queueUrl: string;
+    
   };
   webhook?: {
     url: string;
