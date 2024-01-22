@@ -108,6 +108,10 @@ export const runWebServer = async ({
     }
   );
 
+  fastify.post<{ Body: { secret: string } }>("/admin-token", async (req) => {
+    return await authCore.generateAdminTokenFromSecret(req.body.secret);
+  });
+
   await createAdminRoutes(fastify, {
     authCore,
     entityCore,

@@ -7,10 +7,18 @@ export const createAdminRoutes = async (
 ) => {
   await fastify.register(
     async (fastify, _, done) => {
-      fastify.post<{ Body: { secret: string } }>(
-        "/createTenant",
+      fastify.addHook<{ Body: { secret: string } }>(
+        "preHandler",
         async (req) => {
-          return await authCore.generateAdminTokenFromSecret(req.body.secret);
+          const isAdmin = await authCore.getAdminFromToken(req.body.secret);
+          if (!isAdmin) throw new Error("Not an admin");
+        }
+      );
+
+      fastify.post<{ Body: { tenantName: string } }>(
+        "/create-tenant",
+        async (req) => {
+          return await tenantCore.createTenant(req.body.tenantName);
         }
       );
     },

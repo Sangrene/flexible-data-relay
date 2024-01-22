@@ -983,6 +983,7 @@
     "https://crux.land/router@0.0.5": "https://crux.land/api/get/2KNRVU.ts",
     "https://deno.land/x/amqp/mod.ts": "https://deno.land/x/amqp@v0.23.1/mod.ts",
     "https://deno.land/x/djwt/mod.ts": "https://deno.land/x/djwt@v3.0.1/mod.ts",
+    "https://deno.land/x/dotenv/mod.ts": "https://deno.land/x/dotenv@v3.2.2/mod.ts",
     "https://deno.land/x/timeout/mod.ts": "https://deno.land/x/timeout@2.4/mod.ts"
   },
   "remote": {
