@@ -1,4 +1,5 @@
 import { eventBus } from "../event/eventBus.ts";
+import { logger } from "../logging/logger.ts";
 import { TenantCore } from "../tenants/tenant.core.ts";
 import { Subscription } from "../tenants/tenant.model.ts";
 
@@ -7,7 +8,7 @@ export interface SubscriptionPlugin {
     subscription: Subscription;
     entity: Record<string, any>;
     action: string;
-  }) => void;
+  }) => Promise<void>;
 }
 
 export const createSubscriptionManager = ({
@@ -23,14 +24,18 @@ export const createSubscriptionManager = ({
       const tenants = await tenantCore.getAllTenants();
       for (let i = 0, n = tenants.length; i < n; i++) {
         const tenant = tenants[i];
-        tenant.subscriptions.forEach((sub) => {
-          subscriptionPlugins.forEach((plugin) => {
-            plugin.publishMessage({
-              subscription: sub,
-              entity,
-              action: "updated",
+        tenant.subscriptions?.forEach((sub) => {
+          try {
+            subscriptionPlugins.forEach(async(plugin) => {
+              await plugin.publishMessage({
+                subscription: sub,
+                entity,
+                action: "updated",
+              });
             });
-          });
+          } catch (e) {
+            logger.error(e, entity, "updated");
+          }
         });
       }
     },
@@ -41,13 +46,17 @@ export const createSubscriptionManager = ({
       const tenants = await tenantCore.getAllTenants();
       for (let i = 0, n = tenants.length; i < n; i++) {
         const tenant = tenants[i];
-        tenant.subscriptions.forEach((sub) => {
-          subscriptionPlugins.forEach((plugin) => {
-            plugin.publishMessage({
-              subscription: sub,
-              entity,
-              action: "created",
-            });
+        tenant.subscriptions?.forEach((sub) => {
+          subscriptionPlugins.forEach(async(plugin) => {
+            try {
+              await plugin.publishMessage({
+                subscription: sub,
+                entity,
+                action: "created",
+              });
+            } catch (e) {
+              logger.error(e, entity, "created");
+            }
           });
         });
       }

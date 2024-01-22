@@ -1,6 +1,14 @@
 # Flexible data relay
 Flexible Data Relay (FDR) can be used to share data between multiple systems (or __tenants__). Each tenant can create or update entities, as they do a GraphQL schema will be dynamicaly generated. This schema will allow other tenants that have been granted access to query it. An allowed tenant can also subscribe to the creation / update of an entity.
 
+```mermaid
+graph TD;
+    A-->B;
+    A-->C;
+    B-->D;
+    C-->D;
+```
+
 ## Endpoints
 ### /token
 To get a token that will be used in the Bearer header to identify the requests, you need to run this POST request. __Every endpoint under /app will need this token, sent in the Bearer headers__.

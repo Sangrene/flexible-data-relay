@@ -119,10 +119,9 @@ export const createAppRoutes = (
   );
 
   fastify.post<{
-    Params: { tenant: string };
     Body: { subscription: Subscription };
   }>(
-    "/:tenant/subscribe",
+    "/subscribe",
     {
       schema: {
         description:
@@ -164,7 +163,7 @@ export const createAppRoutes = (
     async function handler(request) {
       const currentTenant = getTenantFromRequest(request);
       tenantCore.accessGuard(currentTenant, {
-        owner: request.params.tenant,
+        owner: request.body.subscription.owner,
       });
 
       return await tenantCore.createSubscription({
