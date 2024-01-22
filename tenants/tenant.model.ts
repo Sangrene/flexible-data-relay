@@ -7,6 +7,7 @@ export interface Access {
 export interface Subscription {
   owner: string;
   entityName: string;
+  key: string;
   queue?: {
     queueName: string;
     queueUrl: string;

@@ -3,8 +3,10 @@ import { WebServerProps, getTenantFromRequest } from "./webserver.ts";
 import { executeSourceAgainstSchema } from "../tenants/graphqlExecutionManager.ts";
 import { Subscription } from "../tenants/tenant.model.ts";
 
-export const createAppRoutes = (fastify: FastifyInstance, {authCore,entityCore,schemasCache,tenantCore}: WebServerProps) => {
-
+export const createAppRoutes = (
+  fastify: FastifyInstance,
+  { authCore, entityCore, schemasCache, tenantCore }: WebServerProps
+) => {
   fastify.post<{ Body: { tenantName: string } }>(
     "/allow-access",
     {
@@ -119,15 +121,56 @@ export const createAppRoutes = (fastify: FastifyInstance, {authCore,entityCore,s
   fastify.post<{
     Params: { tenant: string };
     Body: { subscription: Subscription };
-  }>("/:tenant/subscribe", async function handler(request) {
-    const currentTenant = getTenantFromRequest(request);
-    tenantCore.accessGuard(currentTenant, {
-      owner: request.params.tenant,
-    });
+  }>(
+    "/:tenant/subscribe",
+    {
+      schema: {
+        description:
+          "Create a subscription to a tenant entities update or creation",
+        tags: ["entity"],
+        summary: "Create subscription",
+        body: {
+          type: "object",
+          properties: {
+            subscription: {
+              type: "object",
+              properties: {
+                owner: { type: "string" },
+                entityName: { type: "string" },
+                webhook: {
+                  type: "object",
+                  properties: {
+                    url: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+        },
+        headers: {
+          Bearer: { type: "string" },
+        },
+        response: {
+          201: {
+            description: "Successful response",
+            type: "object",
+            properties: {
+              subscriptionKey: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    async function handler(request) {
+      const currentTenant = getTenantFromRequest(request);
+      tenantCore.accessGuard(currentTenant, {
+        owner: request.params.tenant,
+      });
 
-    return await tenantCore.createSubscription({
-      subscription: request.body.subscription,
-      tenant: currentTenant,
-    });
-  });
-}
+      return await tenantCore.createSubscription({
+        subscription: request.body.subscription,
+        tenant: currentTenant,
+      });
+    }
+  );
+};

@@ -55,17 +55,20 @@ export const createTenantCore = ({
     subscription,
     tenant,
   }: {
-    subscription: Subscription;
+    subscription: Omit<Subscription, "key">;
     tenant: Tenant;
   }) => {
     if (!tenant.accessAllowed.some((acc) => acc.owner === subscription.owner))
       throw new Error(
         "You don't have permission to subscribe to this resource"
       );
-    return await tenantPersistenceHandler.addSubscription({
-      subscription,
+    const savedSubScription = { ...subscription, key: crypto.randomUUID() };
+    await tenantPersistenceHandler.addSubscription({
+      subscription: savedSubScription,
       tenantId: tenant._id,
     });
+
+    return savedSubScription;
   };
 
   const accessGuard = (tenant: Tenant, { owner }: { owner: string }) => {
