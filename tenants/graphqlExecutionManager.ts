@@ -1,19 +1,25 @@
 import { graphql } from "graphql";
-import { TenantsCache } from "../graphql/graphqlSchemasCache.ts";
+import { TenantCore } from "./tenant.core.ts";
+import { EntityCore } from "../entities/entity.core.ts";
 
 export const executeSourceAgainstSchema = async ({
   source,
   tenant,
-  schemasCache,
+  tenantCore,
+  entityCore,
 }: {
-  schemasCache: TenantsCache;
+  tenantCore: TenantCore;
+  entityCore: EntityCore;
   tenant: string;
   source: string;
 }) => {
-  const schema = schemasCache.getTenantSchema(tenant);
+  const schema = await tenantCore.getTenantGraphqlSchema({
+    tenant,
+    entityCore,
+  });
   if (!schema) throw new Error(`No tenant associated with ${tenant}`);
   return graphql({
-    schema: schema.graphqlSchema,
+    schema,
     source,
   });
 };

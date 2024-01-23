@@ -31,9 +31,10 @@ const authCore = await createAuthCore({
 
 // Services
 const cache = await createTenantCache(
-  entityCore,
   await tenantCore.getAllSchemas(entityCore)
 );
+tenantCore.setCache(cache);
+
 const subscriptionPlugins = [];
 subscriptionPlugins.push(createWebhookSubscriptionPlugin());
 if (Deno.env.get("RABBIT_MQ_CONNECTION_STRING")) {

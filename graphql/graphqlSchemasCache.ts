@@ -1,29 +1,22 @@
-import { GraphQLSchema } from "graphql";
 import { eventBus } from "../event/eventBus.ts";
 import { JSONSchema7 } from "../json-schema/jsonSchemaTypes.ts";
-import { createGraphqlSchemaFromEntitiesSchema } from "./jsonToGraphql.ts";
-import { EntityCore } from "../entities/entity.core.ts";
 
 type CacheContent = {
-  [tenant: string]: { entities: JSONSchema7[]; graphqlSchema: GraphQLSchema };
+  [tenant: string]: { entities: JSONSchema7[] };
 };
-export const createTenantCache = async (
-  entityCore: EntityCore,
-  initContent?: CacheContent
-) => {
+export const createTenantCache = async (initContent?: CacheContent) => {
   const schemas: CacheContent = initContent || {};
 
   const getTenantValue = (tenant: string) => {
     if (!schemas[tenant]) {
       schemas[tenant] = {
         entities: [],
-        graphqlSchema: new GraphQLSchema({}),
       };
     }
     return schemas[tenant];
   };
 
-  const getTenantSchema = (tenant: string) => {
+  const getTenantCache = (tenant: string) => {
     return schemas[tenant];
   };
 
@@ -39,20 +32,11 @@ export const createTenantCache = async (
       } else {
         val.entities.push(schema);
       }
-      const graphqlSchema = createGraphqlSchemaFromEntitiesSchema(
-        tenant,
-        val.entities.map((entity) => ({
-          name: entity.title || "",
-          schema: entity,
-        })),
-        entityCore
-      );
-      val.graphqlSchema = graphqlSchema;
     },
   });
 
   return {
-    getTenantSchema,
+    getTenantCache,
   };
 };
 

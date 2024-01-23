@@ -3,7 +3,7 @@ import { WebServerProps } from "./webserver.ts";
 
 export const createAdminRoutes = async (
   fastify: FastifyInstance,
-  { authCore, entityCore, schemasCache, tenantCore }: WebServerProps
+  { authCore, tenantCore }: WebServerProps
 ) => {
   await fastify.register(
     async (fastify, _, done) => {
@@ -21,6 +21,7 @@ export const createAdminRoutes = async (
           return await tenantCore.createTenant(req.body.tenantName);
         }
       );
+      done();
     },
     { prefix: "/admin" }
   );

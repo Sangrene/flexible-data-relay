@@ -196,7 +196,6 @@ export const createGraphqlSchemaFromEntitiesSchema = (
         entityCore.getEntityList({ tenant, entityName: entity.name, query }),
     };
 
-    // return { ...acc, [entity.name]: field, [`${entity.name}List`]: fieldList };
     return { ...acc, [entity.name]: field, [`${entity.name}List`]: fieldList };
   }, {});
   const schema = new GraphQLSchema({

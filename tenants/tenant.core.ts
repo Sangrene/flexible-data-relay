@@ -14,9 +14,26 @@ interface TenantCoreArgs {
 export const createTenantCore = ({
   tenantPersistenceHandler,
 }: TenantCoreArgs) => {
-  let tenantsCache: TenantsCache;
-  const getTenantGraphqlSchema = async ({ tenant }: { tenant: string }) => {
-    return tenantsCache.getTenantSchema(tenant);
+  let tenantsCache: TenantsCache | undefined;
+
+  const getTenantGraphqlSchema = async ({
+    tenant,
+    entityCore,
+  }: {
+    tenant: string;
+    entityCore: EntityCore;
+  }) => {
+    if(!tenantsCache) throw new Error("Tenants cache is not set in tenant core.")
+    const val = tenantsCache.getTenantCache(tenant);
+    const graphqlSchema = createGraphqlSchemaFromEntitiesSchema(
+      tenant,
+      val.entities.map((entity) => ({
+        name: entity.title || "",
+        schema: entity,
+      })),
+      entityCore
+    );
+    return graphqlSchema;
   };
 
   const createTenant = async (tenantName: string) => {

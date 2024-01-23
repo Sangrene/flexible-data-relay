@@ -5,7 +5,7 @@ import { Subscription } from "../tenants/tenant.model.ts";
 
 export const createAppRoutes = (
   fastify: FastifyInstance,
-  { authCore, entityCore, schemasCache, tenantCore }: WebServerProps
+  { entityCore, tenantCore }: WebServerProps
 ) => {
   fastify.post<{ Body: { tenantName: string } }>(
     "/allow-access",
@@ -73,7 +73,8 @@ export const createAppRoutes = (
 
       const result = await executeSourceAgainstSchema({
         source: request.body.query,
-        schemasCache: schemasCache,
+        entityCore,
+        tenantCore,
         tenant: request.params.tenant,
       });
       return result;
