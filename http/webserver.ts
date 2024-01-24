@@ -1,5 +1,4 @@
 import { EntityCore } from "../entities/entity.core.ts";
-import { TenantsCache } from "../graphql/graphqlSchemasCache.ts";
 import Fastify, { FastifyRequest } from "fastify";
 import { AuthCore } from "../auth/auth.ts";
 import { Tenant } from "../tenants/tenant.model.ts";
