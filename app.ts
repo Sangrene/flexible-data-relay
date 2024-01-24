@@ -30,9 +30,10 @@ const authCore = await createAuthCore({
 });
 
 // Services
-const cache = await createTenantCache(
-  await tenantCore.getAllSchemas(entityCore)
-);
+const cache = await createTenantCache({
+  initContent: await tenantCore.getAllSchemas(entityCore),
+  mode: "mongo",
+});
 tenantCore.setCache(cache);
 
 const subscriptionPlugins = [];

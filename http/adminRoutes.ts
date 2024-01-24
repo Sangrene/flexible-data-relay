@@ -7,10 +7,10 @@ export const createAdminRoutes = async (
 ) => {
   await fastify.register(
     async (fastify, _, done) => {
-      fastify.addHook<{ Body: { secret: string } }>(
+      fastify.addHook<{ Headers: { Bearer: string } }>(
         "preHandler",
         async (req) => {
-          const isAdmin = await authCore.getAdminFromToken(req.body.secret);
+          const isAdmin = await authCore.getAdminFromToken(req.headers.bearer);
           if (!isAdmin) throw new Error("Not an admin");
         }
       );

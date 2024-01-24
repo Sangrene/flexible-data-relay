@@ -25,9 +25,10 @@ Deno.test(async function createTenantWithRightSchema() {
   const tenantCore = createTenantCore({
     tenantPersistenceHandler: tenantPersistence,
   });
-  const cache = await createTenantCache(
-    await tenantCore.getAllSchemas(entityCore)
-  );
+  const cache = await createTenantCache({
+    initContent: await tenantCore.getAllSchemas(entityCore),
+    mode: "local",
+  });
   tenantCore.setCache(cache);
   const tenant = await tenantCore.createTenant("tenant");
   const storedTenant = await tenantCore.getTenantById(tenant._id);
@@ -42,9 +43,10 @@ Deno.test(async function canTenantHaveAccessToHisOwnResource() {
   const tenantCore = createTenantCore({
     tenantPersistenceHandler: tenantPersistence,
   });
-  const cache = await createTenantCache(
-    await tenantCore.getAllSchemas(entityCore)
-  );
+  const cache = await createTenantCache({
+    initContent: await tenantCore.getAllSchemas(entityCore),
+    mode: "local",
+  });
   tenantCore.setCache(cache);
   const tenant = await tenantCore.createTenant("tenant");
   assertEquals(tenantCore.accessGuard(tenant, { owner: "tenant" }), true);
@@ -59,9 +61,10 @@ Deno.test(
     const tenantCore = createTenantCore({
       tenantPersistenceHandler: tenantPersistence,
     });
-    const cache = await createTenantCache(
-      await tenantCore.getAllSchemas(entityCore)
-    );
+    const cache = await createTenantCache({
+      initContent: await tenantCore.getAllSchemas(entityCore),
+      mode: "local",
+    });
     tenantCore.setCache(cache);
     const tenant = await tenantCore.createTenant("tenant");
     assertThrows(() => tenantCore.accessGuard(tenant, { owner: "" }), Error);
@@ -77,9 +80,10 @@ Deno.test(
     const tenantCore = createTenantCore({
       tenantPersistenceHandler: tenantPersistence,
     });
-    const cache = await createTenantCache(
-      await tenantCore.getAllSchemas(entityCore)
-    );
+    const cache = await createTenantCache({
+      initContent: await tenantCore.getAllSchemas(entityCore),
+      mode: "local",
+    });
     tenantCore.setCache(cache);
     await tenantCore.createTenant("tenant1");
     await tenantCore.createTenant("tenant2");
@@ -106,9 +110,10 @@ Deno.test(async function sendWebhookRequestIfSubscribedAndEntityIsUpdated() {
   const tenantCore = createTenantCore({
     tenantPersistenceHandler: tenantPersistence,
   });
-  const cache = await createTenantCache(
-    await tenantCore.getAllSchemas(entityCore)
-  );
+  const cache = await createTenantCache({
+    initContent: await tenantCore.getAllSchemas(entityCore),
+    mode: "local",
+  });
   tenantCore.setCache(cache);
   const webhookSubscriptionPlugin = createWebhookSubscriptionPlugin();
   const publishMessageSpy = spy(webhookSubscriptionPlugin, "publishMessage");

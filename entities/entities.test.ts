@@ -9,7 +9,9 @@ import { createTenantInMemoryRepository } from "../tenants/tenantsInMemoryReposi
 Deno.test(async function canQueryJustAddedEntityWithGraphQL() {
   const persistence = createEntityInMemoryRepository();
   const entityCore = createEntityCore({ persistence });
-  const store = await createTenantCache();
+  const store = await createTenantCache({
+    mode: "local",
+  });
   const tenantCore = createTenantCore({
     tenantPersistenceHandler: createTenantInMemoryRepository(),
   });
