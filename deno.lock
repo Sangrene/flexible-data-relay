@@ -7,6 +7,7 @@
       "npm:@jmondi/oauth2-server": "npm:@jmondi/oauth2-server@3.0.2",
       "npm:@types/simple-oauth2": "npm:@types/simple-oauth2@5.0.7",
       "npm:bcryptjs": "npm:bcryptjs@2.4.3",
+      "npm:deepmerge": "npm:deepmerge@4.3.1",
       "npm:fastify": "npm:fastify@4.25.2",
       "npm:format-graphql": "npm:format-graphql@1.4.0",
       "npm:graphql": "npm:graphql@16.8.1",
@@ -442,6 +443,10 @@
       },
       "decamelize@1.2.0": {
         "integrity": "sha512-z2S+W9X73hAUUki+N+9Za2lBlun89zigOyGrsax+KUQ6wKW4ZoWpEYBkGhQjwAjjDCkWxhY0VKEhk8wzY7F5cA==",
+        "dependencies": {}
+      },
+      "deepmerge@4.3.1": {
+        "integrity": "sha512-3sUqbMEc77XqpdNO7FRyRog+eW3ph+GYCbj+rK+uYyRMuwsVy0rMiVtPn+QJlKFvWP/1PYpapqYn0Me2knFn+A==",
         "dependencies": {}
       },
       "defu@6.1.4": {

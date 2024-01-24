@@ -2,29 +2,43 @@ import { eventBus } from "../event/eventBus.ts";
 import { jsonToJsonSchema } from "../json-schema/jsonToJsonSchema.ts";
 import { EntityRepository } from "./entities.persistence.ts";
 import isEqual from "https://deno.land/x/lodash@4.17.4-es/isEqual.js";
+import deepMerge from "deepmerge";
+import { TenantsCache } from "../graphql/graphqlSchemasCache.ts";
 
 interface EntityCoreArgs {
   persistence: EntityRepository;
 }
+
 export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
+  let tenantsCache: TenantsCache | undefined;
+
   const processNewEntitySchema = async ({
     entity,
     entityName,
     tenant,
+    options,
   }: {
     entityName: string;
     entity: object & { id: string };
     tenant: string;
+    options: {
+      schemaReconciliationMode: "merge" | "override";
+    };
   }) => {
-    const computedJsonSchema = {
+    if (!tenantsCache) throw new Error("Tenants cache was not set");
+    const existingSchema = tenantsCache.getEntitySchemaFromCache(
+      tenant,
+      entityName
+    );
+    let computedJsonSchema = {
       ...jsonToJsonSchema(entity),
       title: entityName,
     };
-    const existingSchema = await persistence.getEntitySchema({
-      entityName,
-      tenant,
-    });
+
     if (!isEqual(computedJsonSchema, existingSchema)) {
+      if (options.schemaReconciliationMode === "merge" && existingSchema) {
+        computedJsonSchema = deepMerge(existingSchema, computedJsonSchema);
+      }
       persistence.setEntiySchema({
         tenant,
         entityName,
@@ -41,10 +55,16 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
     entity,
     entityName,
     tenant,
+    options = {
+      schemaReconciliationMode: "override",
+    },
   }: {
     entityName: string;
     entity: any & { id: string };
     tenant: string;
+    options?: {
+      schemaReconciliationMode: "merge" | "override";
+    };
   }) => {
     if (!entity.id)
       throw new Error(
@@ -55,13 +75,13 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
       entityName,
       entity,
     });
-    processNewEntitySchema({ entityName, entity, tenant });
+    processNewEntitySchema({ entityName, entity, tenant, options });
     eventBus.publish({ queue: `entity.${action}`, message: { entity } });
     return entity;
   };
 
   const getEntitySchema = (entityName: string, tenant: string) => {
-    return persistence.getEntitySchema({ tenant, entityName });
+    return tenantsCache?.getEntitySchemaFromCache(tenant, entityName);
   };
 
   const getAllEntitiesSchema = (tenant: string) => {
@@ -90,6 +110,9 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
     getAllEntitiesSchema,
     getEntityById,
     getEntityList,
+    setCache: (cache: TenantsCache) => {
+      tenantsCache = cache;
+    },
   };
 };
 

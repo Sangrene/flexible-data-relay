@@ -81,13 +81,22 @@ export const createAppRoutes = (
     }
   );
 
-  fastify.post<{ Params: { entity: string; tenant: string } }>(
+  fastify.post<{
+    Params: { entity: string; tenant: string };
+    Querystring: { reconciliationMode: "override" | "merge" };
+  }>(
     "/:tenant/entity/:entity",
     {
       schema: {
         description: "Create or update an entity",
         tags: ["entity"],
         summary: "Add entity",
+        querystring: {
+          type: "object",
+          properties: {
+            reconciliationMode: { type: "string", enum: ["override", "merge"] },
+          },
+        },
         body: {
           type: "object",
           properties: {
@@ -114,6 +123,9 @@ export const createAppRoutes = (
         entity: request.body as any,
         tenant: request.params.tenant,
         entityName: request.params.entity,
+        options: {
+          schemaReconciliationMode: request.query.reconciliationMode,
+        },
       });
       return entity;
     }

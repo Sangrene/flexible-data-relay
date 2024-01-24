@@ -14,7 +14,8 @@
     "uuid": "npm:uuid",
     "@fastify/swagger": "npm:@fastify/swagger",
     "@fastify/swagger-ui": "npm:@fastify/swagger-ui",
-    "unstorage": "npm:unstorage"
+    "unstorage": "npm:unstorage",
+    "deepmerge": "npm:deepmerge"
   },
   "lint": {
     "exclude": ["migrations/"],

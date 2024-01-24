@@ -16,6 +16,7 @@ import {
 import { createSubscriptionManager } from "./subscription/subscriptionManager.ts";
 import { createWebhookSubscriptionPlugin } from "./subscription/webhookSubscription.ts";
 import { createAMQPSubscriptionPlugin } from "./subscription/amqpSubscription.ts";
+import { logger } from "./logging/logger.ts";
 
 // const entityPersistence = createEntityInMemoryRepository();
 // const tenantPersistence = tenantInMemoryRepository();
@@ -24,7 +25,6 @@ await connectClient();
 const entityPersistence = createEntitiesMongoRepository({ getTenantDb });
 const tenantsPersistence = createTenantsMongoRepository(getMasterDb());
 
-// Cores
 const entityCore = createEntityCore({ persistence: entityPersistence });
 const tenantCore = createTenantCore({
   tenantPersistenceHandler: tenantsPersistence,
@@ -33,12 +33,12 @@ const authCore = await createAuthCore({
   tenantCore,
 });
 
-// Services
 const cache = createTenantCache({
   initContent: await tenantCore.getAllSchemas(entityCore),
   mode: "mongo",
 });
 tenantCore.setCache(cache);
+entityCore.setCache(cache);
 
 const subscriptionPlugins = [];
 subscriptionPlugins.push(createWebhookSubscriptionPlugin());
@@ -55,9 +55,10 @@ createSubscriptionManager({
 });
 
 // Start
-runWebServer({
+await runWebServer({
   entityCore,
   authCore,
   tenantCore,
-  schemasCache: cache,
 });
+
+logger.info("App successfuly started");

@@ -102,10 +102,15 @@ export const createTenantCache = ({
     return schemas[tenant];
   };
 
+  const getEntitySchemaFromCache = (tenant: string, entityName: string) => {
+    return schemas[tenant]?.entities?.find((ent) => ent.title === entityName);
+  };
+
   cacheMode[mode](schemas).init();
 
   return {
     getTenantCache,
+    getEntitySchemaFromCache,
   };
 };
 

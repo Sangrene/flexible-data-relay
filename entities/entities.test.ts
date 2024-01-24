@@ -17,6 +17,7 @@ Deno.test(async function canQueryJustAddedEntityWithGraphQL() {
     tenantPersistenceHandler: createTenantInMemoryRepository(),
   });
   tenantCore.setCache(store);
+  entityCore.setCache(store);
   await entityCore.createOrUpdateEntity({
     entity: {
       id: "id",

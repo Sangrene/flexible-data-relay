@@ -8,6 +8,7 @@ import fastifySwaggerPlugin from "@fastify/swagger";
 import fastifySwaggerUIPlugin from "@fastify/swagger-ui";
 import { createAppRoutes } from "./appRoutes.ts";
 import { createAdminRoutes } from "./adminRoutes.ts";
+import { logger } from "../logging/logger.ts";
 
 type RequestWithTenant = FastifyRequest & { tenant?: Tenant };
 
@@ -19,13 +20,11 @@ export interface WebServerProps {
   entityCore: EntityCore;
   tenantCore: TenantCore;
   authCore: AuthCore;
-  schemasCache: TenantsCache;
 }
 export const runWebServer = async ({
   entityCore,
   tenantCore,
   authCore,
-  schemasCache,
 }: WebServerProps) => {
   const fastify = Fastify({
     logger: false,
@@ -67,6 +66,12 @@ export const runWebServer = async ({
       return swaggerObject;
     },
     transformSpecificationClone: true,
+  });
+
+  fastify.get("/health", () => {
+    return {
+      health: "OK",
+    };
   });
 
   fastify.post<{ Body: { clientId: string; clientSecret: string } }>(
@@ -114,7 +119,6 @@ export const runWebServer = async ({
   await createAdminRoutes(fastify, {
     authCore,
     entityCore,
-    schemasCache,
     tenantCore,
   });
 
@@ -129,7 +133,6 @@ export const runWebServer = async ({
       createAppRoutes(fastify, {
         authCore,
         entityCore,
-        schemasCache,
         tenantCore,
       });
 
@@ -138,9 +141,6 @@ export const runWebServer = async ({
     { prefix: "/app" }
   );
 
-  try {
-    await fastify.listen({ port: 3000 });
-  } catch (err) {
-    fastify.log.error(err);
-  }
+  await fastify.listen({ port: 3000 });
+  logger.info(`Webserver listening on port ${fastify.server.address().port}`);
 };

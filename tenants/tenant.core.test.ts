@@ -30,6 +30,8 @@ Deno.test(async function createTenantWithRightSchema() {
     mode: "local",
   });
   tenantCore.setCache(cache);
+  entityCore.setCache(cache);
+
   const tenant = await tenantCore.createTenant("tenant");
   const storedTenant = await tenantCore.getTenantById(tenant._id);
   assertEquals(tenant, storedTenant);
@@ -48,6 +50,8 @@ Deno.test(async function canTenantHaveAccessToHisOwnResource() {
     mode: "local",
   });
   tenantCore.setCache(cache);
+  entityCore.setCache(cache);
+
   const tenant = await tenantCore.createTenant("tenant");
   assertEquals(tenantCore.accessGuard(tenant, { owner: "tenant" }), true);
 });
@@ -66,6 +70,8 @@ Deno.test(
       mode: "local",
     });
     tenantCore.setCache(cache);
+    entityCore.setCache(cache);
+
     const tenant = await tenantCore.createTenant("tenant");
     assertThrows(() => tenantCore.accessGuard(tenant, { owner: "" }), Error);
   }
@@ -85,6 +91,8 @@ Deno.test(
       mode: "local",
     });
     tenantCore.setCache(cache);
+    entityCore.setCache(cache);
+
     await tenantCore.createTenant("tenant1");
     await tenantCore.createTenant("tenant2");
     await tenantCore.allowTenantAccessToOwnResource({
@@ -115,6 +123,7 @@ Deno.test(async function sendWebhookRequestIfSubscribedAndEntityIsUpdated() {
     mode: "local",
   });
   tenantCore.setCache(cache);
+  entityCore.setCache(cache);
   const webhookSubscriptionPlugin = createWebhookSubscriptionPlugin();
   const publishMessageSpy = spy(webhookSubscriptionPlugin, "publishMessage");
 

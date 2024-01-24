@@ -25,7 +25,7 @@ export const createTenantCore = ({
   }) => {
     if (!tenantsCache)
       throw new Error("Tenants cache is not set in tenant core.");
-    const val = await tenantsCache.getTenantCache(tenant);
+    const val = tenantsCache.getTenantCache(tenant);
     const graphqlSchema = createGraphqlSchemaFromEntitiesSchema(
       tenant,
       val.entities?.map((entity) => ({
