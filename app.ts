@@ -8,14 +8,18 @@ import { createTenantCore } from "./tenants/tenant.core.ts";
 import { createTenantCache } from "./graphql/graphqlSchemasCache.ts";
 import { createTenantsMongoRepository } from "./tenants/tenantsMongoRepository.ts";
 import { createEntitiesMongoRepository } from "./entities/entitiesMongoRepository.ts";
-import { getMasterDb, getTenantDb } from "./persistence/mongo.ts";
+import {
+  connectClient,
+  getMasterDb,
+  getTenantDb,
+} from "./persistence/mongo.ts";
 import { createSubscriptionManager } from "./subscription/subscriptionManager.ts";
 import { createWebhookSubscriptionPlugin } from "./subscription/webhookSubscription.ts";
 import { createAMQPSubscriptionPlugin } from "./subscription/amqpSubscription.ts";
 
 // const entityPersistence = createEntityInMemoryRepository();
 // const tenantPersistence = tenantInMemoryRepository();
-
+await connectClient();
 // Repositories
 const entityPersistence = createEntitiesMongoRepository({ getTenantDb });
 const tenantsPersistence = createTenantsMongoRepository(getMasterDb());
