@@ -1,4 +1,4 @@
-import { ChangeStreamDocument, Db } from "mongodb";
+import { ChangeStreamDocument } from "mongodb";
 import { eventBus } from "../event/eventBus.ts";
 import { JSONSchema7 } from "../json-schema/jsonSchemaTypes.ts";
 import { getMasterDb, getTenantDb } from "../persistence/mongo.ts";
