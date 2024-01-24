@@ -13,7 +13,8 @@
     "ts-simple-event-bus": "npm:ts-simple-event-bus@2.0.5",
     "uuid": "npm:uuid",
     "@fastify/swagger": "npm:@fastify/swagger",
-    "@fastify/swagger-ui": "npm:@fastify/swagger-ui"
+    "@fastify/swagger-ui": "npm:@fastify/swagger-ui",
+    "unstorage": "npm:unstorage"
   },
   "lint": {
     "exclude": ["migrations/"],

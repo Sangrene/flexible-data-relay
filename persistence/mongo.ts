@@ -3,7 +3,11 @@ import { Db, MongoClient } from "mongodb";
 const client = new MongoClient(
   Deno.env.get("MONGODB_CONNECTION_STRING") || "mongodb://localhost:27017"
 );
-await client.connect();
+
+export const connectClient = async() => {
+  await client.connect();
+
+}
 
 const masterDb = client.db("master");
 

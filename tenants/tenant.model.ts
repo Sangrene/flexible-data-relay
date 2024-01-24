@@ -10,7 +10,7 @@ export interface Subscription {
   key: string;
   queue?: {
     queueName: string;
-    queueUrl: string;
+    
   };
   webhook?: {
     url: string;
@@ -22,5 +22,5 @@ export interface Tenant {
   lastSecret: string;
   lastSecretHash: string;
   accessAllowed: Access[];
-  subscriptions: Subscription[];
+  subscriptions?: Subscription[];
 }

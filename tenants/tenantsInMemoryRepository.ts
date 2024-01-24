@@ -1,7 +1,7 @@
 import { Tenant } from "./tenant.model.ts";
 import { TenantRepository } from "./tenant.persistence.ts";
 
-export const tenantInMemoryRepository = (): TenantRepository => {
+export const createTenantInMemoryRepository = (): TenantRepository => {
   const inMemoryStore: Tenant[] = [];
   const getTenantById = async (id: string) => {
     const tenant = inMemoryStore.find((tenant) => tenant._id === id);
@@ -39,7 +39,7 @@ export const tenantInMemoryRepository = (): TenantRepository => {
       for (let i = 0, n = inMemoryStore.length; i < n; i++) {
         const tenant = inMemoryStore[i];
         if (tenant._id === tenantId) {
-          tenant.subscriptions.push(subscription);
+          tenant.subscriptions?.push(subscription);
           return tenant;
         }
       }

@@ -1,23 +1,23 @@
 import { assertEquals } from "https://deno.land/std@0.209.0/assert/assert_equals.ts";
 import { createAuthCore } from "./auth.ts";
 import { createTenantCore } from "../tenants/tenant.core.ts";
-import { tenantInMemoryRepository } from "../tenants/tenantsInMemoryRepository.ts";
+import { createTenantInMemoryRepository } from "../tenants/tenantsInMemoryRepository.ts";
 import { createEntityInMemoryRepository } from "../entities/entitiesinMemoryRepository.ts";
 import { createTenantCache } from "../graphql/graphqlSchemasCache.ts";
 import { assertExists } from "https://deno.land/std@0.209.0/assert/assert_exists.ts";
 import { createEntityCore } from "../entities/entity.core.ts";
 
 Deno.test(async function canGenerateTenantTokenFromIdAndCredentials() {
-  const tenantPersistence = tenantInMemoryRepository();
+  const tenantPersistence = createTenantInMemoryRepository();
   const entityPersistence = createEntityInMemoryRepository();
   const entityCore = createEntityCore({ persistence: entityPersistence });
   const tenantCore = createTenantCore({
     tenantPersistenceHandler: tenantPersistence,
   });
-  const cache = await createTenantCache(
-    entityCore,
-    await tenantCore.getAllSchemas(entityCore)
-  );
+  const cache = createTenantCache({
+    initContent: await tenantCore.getAllSchemas(entityCore),
+    mode: "local",
+  });
   tenantCore.setCache(cache);
 
   const authCore = await createAuthCore({ tenantCore });
@@ -30,16 +30,16 @@ Deno.test(async function canGenerateTenantTokenFromIdAndCredentials() {
 });
 
 Deno.test(async function canGetTenantUsingToken() {
-  const tenantPersistence = tenantInMemoryRepository();
+  const tenantPersistence = createTenantInMemoryRepository();
   const entityPersistence = createEntityInMemoryRepository();
   const entityCore = createEntityCore({ persistence: entityPersistence });
   const tenantCore = createTenantCore({
     tenantPersistenceHandler: tenantPersistence,
   });
-  const cache = await createTenantCache(
-    entityCore,
-    await tenantCore.getAllSchemas(entityCore)
-  );
+  const cache = createTenantCache({
+    initContent: await tenantCore.getAllSchemas(entityCore),
+    mode: "local",
+  });
   tenantCore.setCache(cache);
 
   const authCore = await createAuthCore({ tenantCore });

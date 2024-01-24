@@ -3,14 +3,14 @@ import { WebServerProps } from "./webserver.ts";
 
 export const createAdminRoutes = async (
   fastify: FastifyInstance,
-  { authCore, entityCore, schemasCache, tenantCore }: WebServerProps
+  { authCore, tenantCore }: WebServerProps
 ) => {
   await fastify.register(
     async (fastify, _, done) => {
-      fastify.addHook<{ Body: { secret: string } }>(
+      fastify.addHook<{ Headers: { Bearer: string } }>(
         "preHandler",
         async (req) => {
-          const isAdmin = await authCore.getAdminFromToken(req.body.secret);
+          const isAdmin = await authCore.getAdminFromToken(req.headers.bearer);
           if (!isAdmin) throw new Error("Not an admin");
         }
       );
@@ -21,6 +21,7 @@ export const createAdminRoutes = async (
           return await tenantCore.createTenant(req.body.tenantName);
         }
       );
+      done();
     },
     { prefix: "/admin" }
   );

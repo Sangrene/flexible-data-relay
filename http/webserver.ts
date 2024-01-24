@@ -1,9 +1,8 @@
-import { executeSourceAgainstSchema } from "../tenants/graphqlExecutionManager.ts";
 import { EntityCore } from "../entities/entity.core.ts";
 import { TenantsCache } from "../graphql/graphqlSchemasCache.ts";
 import Fastify, { FastifyRequest } from "fastify";
 import { AuthCore } from "../auth/auth.ts";
-import { Subscription, Tenant } from "../tenants/tenant.model.ts";
+import { Tenant } from "../tenants/tenant.model.ts";
 import { TenantCore } from "../tenants/tenant.core.ts";
 import fastifySwaggerPlugin from "@fastify/swagger";
 import fastifySwaggerUIPlugin from "@fastify/swagger-ui";
@@ -55,16 +54,16 @@ export const runWebServer = async ({
       deepLinking: false,
     },
     uiHooks: {
-      onRequest: function (request, reply, next) {
+      onRequest: function (_request, _reply, next) {
         next();
       },
-      preHandler: function (request, reply, next) {
+      preHandler: function (_request, _reply, next) {
         next();
       },
     },
     staticCSP: true,
     transformStaticCSP: (header) => header,
-    transformSpecification: (swaggerObject, request, reply) => {
+    transformSpecification: (swaggerObject, _request, _reply) => {
       return swaggerObject;
     },
     transformSpecificationClone: true,

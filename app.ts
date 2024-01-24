@@ -8,13 +8,18 @@ import { createTenantCore } from "./tenants/tenant.core.ts";
 import { createTenantCache } from "./graphql/graphqlSchemasCache.ts";
 import { createTenantsMongoRepository } from "./tenants/tenantsMongoRepository.ts";
 import { createEntitiesMongoRepository } from "./entities/entitiesMongoRepository.ts";
-import { getMasterDb, getTenantDb } from "./persistence/mongo.ts";
+import {
+  connectClient,
+  getMasterDb,
+  getTenantDb,
+} from "./persistence/mongo.ts";
 import { createSubscriptionManager } from "./subscription/subscriptionManager.ts";
 import { createWebhookSubscriptionPlugin } from "./subscription/webhookSubscription.ts";
+import { createAMQPSubscriptionPlugin } from "./subscription/amqpSubscription.ts";
 
 // const entityPersistence = createEntityInMemoryRepository();
 // const tenantPersistence = tenantInMemoryRepository();
-
+await connectClient();
 // Repositories
 const entityPersistence = createEntitiesMongoRepository({ getTenantDb });
 const tenantsPersistence = createTenantsMongoRepository(getMasterDb());
@@ -29,13 +34,23 @@ const authCore = await createAuthCore({
 });
 
 // Services
-const cache = await createTenantCache(
-  entityCore,
-  await tenantCore.getAllSchemas(entityCore)
-);
-const webhookSubscriptionPlugin = createWebhookSubscriptionPlugin();
+const cache = createTenantCache({
+  initContent: await tenantCore.getAllSchemas(entityCore),
+  mode: "mongo",
+});
+tenantCore.setCache(cache);
+
+const subscriptionPlugins = [];
+subscriptionPlugins.push(createWebhookSubscriptionPlugin());
+if (Deno.env.get("RABBIT_MQ_CONNECTION_STRING")) {
+  subscriptionPlugins.push(
+    await createAMQPSubscriptionPlugin({
+      connectionString: Deno.env.get("RABBIT_MQ_CONNECTION_STRING")!,
+    })
+  );
+}
 createSubscriptionManager({
-  subscriptionPlugins: [webhookSubscriptionPlugin],
+  subscriptionPlugins: subscriptionPlugins,
   tenantCore,
 });
 
