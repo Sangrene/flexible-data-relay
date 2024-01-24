@@ -34,7 +34,7 @@ const mongoMode = (schemas: CacheContent) => {
     tenantStream.on("change", onChangeEntitySchema(tenant));
   };
 
-  const init = async () => {
+  const init = () => {
     const masterStream = getMasterDb().watch();
     masterStream.on("change", (e) => {
       if (e.operationType === "insert") {
@@ -47,6 +47,7 @@ const mongoMode = (schemas: CacheContent) => {
       const tenant = getKeys(schemas)[i] as string;
       listenToTenantSchemaUpdate(tenant);
     }
+    logger.info("Init mongo cache & subscription");
   };
 
   return {
@@ -55,34 +56,28 @@ const mongoMode = (schemas: CacheContent) => {
 };
 
 const localMode = (schemas: CacheContent) => {
-  const getTenantValue = async (tenant: string) => {
-    if (!schemas[tenant]) {
-      schemas[tenant] = {
-        entities: [],
-      };
-    }
-    return schemas[tenant];
-  };
-
-  const init = async() => {
+  const init = () => {
     eventBus.subscribe({
       queue: "entity-schema.updated",
       callback: ({ schema, tenant }) => {
-        async () => {
-          const val = await getTenantValue(tenant);
-          const index = val.entities?.findIndex(
-            (entity) => entity.title === schema.title
-          );
-          if (!val || !index || !val?.entities?.[index]) return;
-          if (index > -1) {
-            val.entities[index] = schema;
-          } else {
-            val.entities.push(schema);
-          }
-        };
+        if (!schemas[tenant]) {
+          schemas[tenant] = { entities: [] };
+        }
+        logger.info("Entity schema updated using local bus");
+        const index = schemas[tenant].entities?.findIndex(
+          (entity) => entity.title === schema.title
+        );
+        if (typeof index === "undefined") return;
+        if (index > -1) {
+          schemas[tenant].entities![index] = schema;
+        } else {
+          schemas[tenant].entities!.push(schema);
+        }
       },
     });
+    logger.info("Init local cache & subscription");
   };
+
   return { init };
 };
 
@@ -94,7 +89,7 @@ const cacheMode = {
 type CacheContent = {
   [tenant: string]: { entities?: JSONSchema7[] };
 };
-export const createTenantCache = async ({
+export const createTenantCache = ({
   initContent,
   mode,
 }: {
@@ -103,11 +98,11 @@ export const createTenantCache = async ({
 }) => {
   const schemas: CacheContent = initContent || {};
 
-  const getTenantCache = async (tenant: string) => {
+  const getTenantCache = (tenant: string) => {
     return schemas[tenant];
   };
 
-  await cacheMode[mode](schemas).init();
+  cacheMode[mode](schemas).init();
 
   return {
     getTenantCache,

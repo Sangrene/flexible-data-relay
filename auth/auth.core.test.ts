@@ -14,7 +14,7 @@ Deno.test(async function canGenerateTenantTokenFromIdAndCredentials() {
   const tenantCore = createTenantCore({
     tenantPersistenceHandler: tenantPersistence,
   });
-  const cache = await createTenantCache({
+  const cache = createTenantCache({
     initContent: await tenantCore.getAllSchemas(entityCore),
     mode: "local",
   });
@@ -36,7 +36,7 @@ Deno.test(async function canGetTenantUsingToken() {
   const tenantCore = createTenantCore({
     tenantPersistenceHandler: tenantPersistence,
   });
-  const cache = await createTenantCache({
+  const cache = createTenantCache({
     initContent: await tenantCore.getAllSchemas(entityCore),
     mode: "local",
   });

@@ -30,7 +30,7 @@ const authCore = await createAuthCore({
 });
 
 // Services
-const cache = await createTenantCache({
+const cache = createTenantCache({
   initContent: await tenantCore.getAllSchemas(entityCore),
   mode: "mongo",
 });
