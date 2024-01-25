@@ -10,12 +10,12 @@ name: Deno
 
 on:
   push:
-    paths:
-      - lib/**
+    # paths:
+    #   - lib/**
     branches: ["master"]
   pull_request:
-    paths:
-      - lib/**
+    # paths:
+    #   - lib/**
     branches: ["master"]
 
 permissions:
@@ -24,9 +24,9 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./lib
+    # defaults:
+    #   run:
+    #     working-directory: ./lib
 
     steps:
       - name: Setup repo
