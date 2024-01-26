@@ -12,8 +12,8 @@ import {
   assertSpyCall,
   spy,
 } from "https://deno.land/std@0.212.0/testing/mock.ts";
-import { createWebhookSubscriptionPlugin } from "../subscription/webhookSubscription.ts";
-import { createSubscriptionManager } from "../subscription/subscriptionManager.ts";
+import { createWebhookSubscriptionPlugin } from "../publishing/webhookPublisher.ts";
+import { createSubscriptionManager } from "../publishing/publishingManager.ts";
 import { Timeout } from "https://deno.land/x/timeout/mod.ts";
 import * as mf from "https://deno.land/x/mock_fetch@0.3.0/mod.ts";
 

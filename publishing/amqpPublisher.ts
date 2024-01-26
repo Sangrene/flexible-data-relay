@@ -1,15 +1,15 @@
 import { connect } from "https://deno.land/x/amqp/mod.ts";
-import { SubscriptionPlugin } from "./subscriptionManager.ts";
+import { PublishingPlugin } from "./publishingManager.ts";
 import { logger } from "../logging/logger.ts";
 
 export const createAMQPSubscriptionPlugin = async ({
   connectionString,
 }: {
   connectionString: string;
-}): Promise<SubscriptionPlugin> => {
+}): Promise<PublishingPlugin> => {
   const connection = await connect(connectionString);
   const channel = await connection.openChannel();
-  logger.info("Connected to provided RabbitMQ instance.")
+  logger.info("AMQP publisher plugin connected to provided RabbitMQ instance.");
   return {
     publishMessage: async ({ action, entity, subscription }) => {
       if (subscription.queue) {

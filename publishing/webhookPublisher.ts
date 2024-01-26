@@ -1,7 +1,7 @@
-import { SubscriptionPlugin } from "./subscriptionManager.ts";
+import { PublishingPlugin } from "./subscriptionManager.ts";
 import { logger } from "../logging/logger.ts";
 
-export const createWebhookSubscriptionPlugin = (): SubscriptionPlugin => {
+export const createWebhookSubscriptionPlugin = (): PublishingPlugin => {
   return {
     publishMessage: async ({ subscription, action, entity }) => {
       if (subscription.webhook) {

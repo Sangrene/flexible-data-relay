@@ -1,9 +1,10 @@
+import { EntityCore } from "../entities/entity.core.ts";
 import { eventBus } from "../event/eventBus.ts";
 import { logger } from "../logging/logger.ts";
 import { TenantCore } from "../tenants/tenant.core.ts";
 import { Subscription } from "../tenants/tenant.model.ts";
 
-export interface SubscriptionPlugin {
+export interface PublishingPlugin {
   publishMessage: (p: {
     subscription: Subscription;
     entity: Record<string, any>;
@@ -16,8 +17,10 @@ export const createSubscriptionManager = ({
   subscriptionPlugins,
 }: {
   tenantCore: TenantCore;
-  subscriptionPlugins: SubscriptionPlugin[];
+  subscriptionPlugins: PublishingPlugin[];
 }) => {
+
+
   eventBus.subscribe({
     queue: "entity.updated",
     callback: async ({ entity }) => {

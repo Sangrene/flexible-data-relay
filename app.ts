@@ -13,9 +13,9 @@ import {
   getMasterDb,
   getTenantDb,
 } from "./persistence/mongo.ts";
-import { createSubscriptionManager } from "./subscription/subscriptionManager.ts";
-import { createWebhookSubscriptionPlugin } from "./subscription/webhookSubscription.ts";
-import { createAMQPSubscriptionPlugin } from "./subscription/amqpSubscription.ts";
+import { createSubscriptionManager } from "./publishing/publishingManager.ts";
+import { createWebhookSubscriptionPlugin } from "./publishing/webhookPublisher.ts";
+import { createAMQPSubscriptionPlugin } from "./publishing/amqpPublisher.ts";
 import { logger } from "./logging/logger.ts";
 
 // const entityPersistence = createEntityInMemoryRepository();

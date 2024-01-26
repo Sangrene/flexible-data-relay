@@ -14,6 +14,11 @@ type EventBusTyping = {
   "entity.created": {
     entity: Record<string, any>;
   };
+  "entity.subscribed": {
+    entityName: string;
+    tenant: string;
+    queueName: string;
+  };
 };
 
 export const eventBus = new EventBus<EventBusTyping>(uuidv4);

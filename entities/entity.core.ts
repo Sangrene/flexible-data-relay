@@ -104,6 +104,21 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
     return persistence.getEntityList(p);
   };
 
+  const createEntitySourceSubscription = ({
+    entityName,
+    queueName,
+    tenant,
+  }: {
+    entityName: string;
+    queueName: string;
+    tenant: string;
+  }) => {
+    eventBus.publish({
+      queue: "entity.subscribed",
+      message: { entityName, queueName, tenant },
+    });
+  };
+
   return {
     createOrUpdateEntity,
     getEntitySchema,
@@ -113,6 +128,7 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
     setCache: (cache: TenantsCache) => {
       tenantsCache = cache;
     },
+    createEntitySourceSubscription,
   };
 };
 
