@@ -3,6 +3,10 @@ import { createEntityInMemoryRepository } from "./entitiesinMemoryRepository.ts"
 import { createEntityCore } from "./entity.core.ts";
 import { jsonToJsonSchema } from "../json-schema/jsonToJsonSchema.ts";
 import { createTenantCache } from "../graphql/graphqlSchemasCache.ts";
+import {
+  assertSpyCall,
+  spy,
+} from "https://deno.land/std@0.212.0/testing/mock.ts";
 
 Deno.test(async function createsEntityIfItDoesntExistYet() {
   const ENTITY = { id: "id", a: 2, b: "truc" };
@@ -129,5 +133,25 @@ Deno.test(
     };
     const existingSchema = core.getEntitySchema("testEntity", "");
     assertEquals(computedSchema, existingSchema);
+  }
+);
+
+Deno.test(
+  async function doesntUpdateSchemaOrStoreInRepositoryIfAddingEntityWithTransientOption() {
+    const ENTITY = { id: "id", a: 2, b: "truc", d: false };
+    const persistence = createEntityInMemoryRepository();
+    const store = createTenantCache({
+      mode: "local",
+    });
+    const saveEntityPersistenceSpy = spy(persistence, "createOrUpdateEntity");
+    const core = createEntityCore({ persistence });
+    core.setCache(store);
+    await core.createOrUpdateEntity({
+      entityName: "testEntity",
+      entity: ENTITY,
+      tenant: "tenant",
+      options: { transient: false },
+    });
+    assertSpyCall(saveEntityPersistenceSpy, 0);
   }
 );

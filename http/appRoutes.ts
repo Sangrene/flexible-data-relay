@@ -83,7 +83,10 @@ export const createAppRoutes = (
 
   fastify.post<{
     Params: { entity: string; tenant: string };
-    Querystring: { reconciliationMode: "override" | "merge" };
+    Querystring: {
+      reconciliationMode: "override" | "merge";
+      transient: boolean;
+    };
   }>(
     "/:tenant/entity/:entity",
     {
@@ -95,6 +98,7 @@ export const createAppRoutes = (
           type: "object",
           properties: {
             reconciliationMode: { type: "string", enum: ["override", "merge"] },
+            transient: { type: "boolean" },
           },
         },
         body: {
@@ -125,6 +129,7 @@ export const createAppRoutes = (
         entityName: request.params.entity,
         options: {
           schemaReconciliationMode: request.query.reconciliationMode,
+          transient: request.query.transient,
         },
       });
       return entity;

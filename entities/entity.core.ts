@@ -16,14 +16,12 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
     entity,
     entityName,
     tenant,
-    options,
+    schemaReconciliationMode = "override",
   }: {
     entityName: string;
     entity: object & { id: string };
     tenant: string;
-    options: {
-      schemaReconciliationMode: "merge" | "override";
-    };
+    schemaReconciliationMode?: "merge" | "override";
   }) => {
     if (!tenantsCache) throw new Error("Tenants cache was not set");
     const existingSchema = tenantsCache.getEntitySchemaFromCache(
@@ -36,7 +34,7 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
     };
 
     if (!isEqual(computedJsonSchema, existingSchema)) {
-      if (options.schemaReconciliationMode === "merge" && existingSchema) {
+      if (schemaReconciliationMode === "merge" && existingSchema) {
         computedJsonSchema = deepMerge(existingSchema, computedJsonSchema);
       }
       persistence.setEntiySchema({
@@ -57,26 +55,38 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
     tenant,
     options = {
       schemaReconciliationMode: "override",
+      transient: false,
     },
   }: {
     entityName: string;
     entity: any & { id: string };
     tenant: string;
     options?: {
-      schemaReconciliationMode: "merge" | "override";
+      schemaReconciliationMode?: "merge" | "override";
+      transient?: boolean;
     };
   }) => {
     if (!entity.id)
       throw new Error(
         "Entity should have an 'id' field that serves as identifier"
       );
-    const { action } = await persistence.createOrUpdateEntity({
-      tenant,
-      entityName,
-      entity,
-    });
-    processNewEntitySchema({ entityName, entity, tenant, options });
-    eventBus.publish({ queue: `entity.${action}`, message: { entity } });
+    if (!options.transient) {
+      const { action } = await persistence.createOrUpdateEntity({
+        tenant,
+        entityName,
+        entity,
+      });
+      processNewEntitySchema({
+        entityName,
+        entity,
+        tenant,
+        schemaReconciliationMode: options.schemaReconciliationMode,
+      });
+      eventBus.publish({ queue: `entity.${action}`, message: { entity } });
+      return entity;
+    }
+
+    eventBus.publish({ queue: `entity.created`, message: { entity } });
     return entity;
   };
 
