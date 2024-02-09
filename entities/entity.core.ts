@@ -52,6 +52,7 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
     entity,
     entityName,
     tenant,
+      transient: false,
     options = {
       schemaReconciliationMode: "override",
     },
