@@ -4,6 +4,7 @@ import { EntityRepository } from "./entities.persistence.ts";
 import isEqual from "https://deno.land/x/lodash@4.17.4-es/isEqual.js";
 import deepMerge from "deepmerge";
 import { TenantsCache } from "../graphql/graphqlSchemasCache.ts";
+import { JSONSchema7 } from "../json-schema/jsonSchemaTypes.ts";
 
 interface EntityCoreArgs {
   persistence: EntityRepository;
@@ -13,13 +14,13 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
   let tenantsCache: TenantsCache | undefined;
 
   const processNewEntitySchema = async ({
-    entity,
+    schema,
     entityName,
     tenant,
     options,
   }: {
     entityName: string;
-    entity: object & { id: string };
+    schema: JSONSchema7;
     tenant: string;
     options: {
       schemaReconciliationMode: "merge" | "override";
@@ -30,23 +31,19 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
       tenant,
       entityName
     );
-    let computedJsonSchema = {
-      ...jsonToJsonSchema(entity),
-      title: entityName,
-    };
 
     if (!isEqual(computedJsonSchema, existingSchema)) {
       if (options.schemaReconciliationMode === "merge" && existingSchema) {
         computedJsonSchema = deepMerge(existingSchema, computedJsonSchema);
       }
-      persistence.setEntiySchema({
+      persistence.setEntitySchema({
         tenant,
         entityName,
-        newSchema: computedJsonSchema,
+        newSchema: schema,
       });
       eventBus.publish({
         queue: "entity-schema.updated",
-        message: { schema: computedJsonSchema, tenant },
+        message: { schema: schema, tenant },
       });
     }
   };
@@ -117,3 +114,38 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
 };
 
 export type EntityCore = ReturnType<typeof createEntityCore>;
+  const createOrUpdateEntityList = async ({
+    entityList,
+    entityName,
+    tenant,
+    options = {
+      schemaReconciliationMode: "override",
+      transient: false,
+    },
+  }: {
+    entityName: string;
+    tenant: string;
+    entityList: Array<object & { id: string }>;
+    options?: {
+      schemaReconciliationMode?: "merge" | "override";
+      transient?: boolean;
+    };
+  }) => {
+    const mergedSchema = entityList.reduce<JSONSchema7>(
+      (acc, entity) => deepMerge(acc, jsonToJsonSchema(entity)),
+      { title: entityName }
+    );
+    if (!options.transient) {
+      await persistence.saveEntityList({ tenant, entityName, entityList });
+    }
+    processNewEntitySchema({
+      entityName,
+      schema: mergedSchema,
+      tenant,
+      schemaReconciliationMode: options.schemaReconciliationMode,
+    });
+    entityList.map((entity) => {
+      eventBus.publish({ queue: `entity.created`, message: { entity } });
+    });
+  };
+

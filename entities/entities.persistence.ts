@@ -26,11 +26,16 @@ export interface EntityRepository {
     entity: object & { id: string };
     tenant: string;
   }) => Promise<{ action: "created" | "updated"; entity: Record<string, any> }>;
+  saveEntityList: (p: {
+    entityName: string;
+    tenant: string;
+    entityList: Array<object & { id: string }>;
+  }) => Promise<any>;
   getEntitySchema: (p: {
     entityName: string;
     tenant: string;
   }) => Promise<JSONSchema7 | undefined>;
-  setEntiySchema: (p: {
+  setEntitySchema: (p: {
     entityName: string;
     newSchema: JSONSchema7;
     tenant: string;

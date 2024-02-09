@@ -46,6 +46,33 @@ export const createEntityInMemoryRepository = (): EntityRepository => {
   }) => {
     getEntityCollection(tenant, entityName).push(entity);
   };
+
+  const createOrUpdateEntity = async ({
+    entity,
+    entityName,
+    tenant,
+  }: {
+    entityName: string;
+    entity: object & { id: string };
+    tenant: string;
+  }) => {
+    const index = getEntityCollection(tenant, entityName).findIndex(
+      (item) => item.id === entity.id
+    );
+    if (index >= 0) {
+      await updateEntity({ entityName, entity, tenant });
+      return {
+        action: "updated",
+        entity,
+      } as const;
+    } else {
+      await createEntity({ entityName, entity, tenant });
+      return {
+        action: "created",
+        entity,
+      } as const;
+    }
+  };
   return {
     getEntitySchema: async ({
       entityName,
@@ -55,7 +82,7 @@ export const createEntityInMemoryRepository = (): EntityRepository => {
       tenant: string;
     }) =>
       getTenantDb(tenant).schemas.find((schema) => schema.title === entityName),
-    setEntiySchema: async ({
+    setEntitySchema: async ({
       entityName,
       newSchema,
       tenant,
@@ -94,34 +121,14 @@ export const createEntityInMemoryRepository = (): EntityRepository => {
     }) => getTenantDb(tenant)[entityName],
     createEntity,
     updateEntity,
-    createOrUpdateEntity: async ({
-      entity,
-      entityName,
-      tenant,
-    }: {
-      entityName: string;
-      entity: object & { id: string };
-      tenant: string;
-    }) => {
-      const index = getEntityCollection(tenant, entityName).findIndex(
-        (item) => item.id === entity.id
-      );
-      if (index >= 0) {
-        await updateEntity({ entityName, entity, tenant });
-        return {
-          action: "updated",
-          entity,
-        };
-      } else {
-        await createEntity({ entityName, entity, tenant });
-        return {
-          action: "created",
-          entity,
-        };
-      }
-    },
+    createOrUpdateEntity,
     getAllSchemas: async (tenant: string) => {
       return inMemoryStore[tenant].schemas;
+    },
+    saveEntityList: async ({ entityList, entityName, tenant }) => {
+      return entityList.map((entity) =>
+        createOrUpdateEntity({ entity, entityName, tenant })
+      );
     },
   };
 };
