@@ -36,7 +36,7 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
       if (options.schemaReconciliationMode === "merge" && existingSchema) {
         computedJsonSchema = deepMerge(existingSchema, computedJsonSchema);
       }
-      persistence.setEntitySchema({
+      persistence.setEntiySchema({
         tenant,
         entityName,
         newSchema: schema,
@@ -50,9 +50,9 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
 
   const createOrUpdateEntity = async ({
     entity,
+      transient: false,
     entityName,
     tenant,
-      transient: false,
     options = {
       schemaReconciliationMode: "override",
     },
