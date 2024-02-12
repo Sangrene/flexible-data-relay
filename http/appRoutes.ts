@@ -87,6 +87,9 @@ export const createAppRoutes = (
       reconciliationMode: "override" | "merge";
       transient: boolean;
     };
+    Body:
+      | Array<Record<string, any> & { id: string }>
+      | (Record<string, any> & { id: string });
   }>(
     "/:tenant/entity/:entity",
     {
@@ -102,11 +105,25 @@ export const createAppRoutes = (
           },
         },
         body: {
-          type: "object",
-          properties: {
-            id: { type: "string" },
-          },
+          anyOf: [
+            {
+              type: "object",
+              properties: {
+                id: { type: "string" },
+              },
+            },
+            {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  id: { type: "string" },
+                },
+              },
+            },
+          ],
         },
+
         headers: {
           Bearer: { type: "string" },
         },
@@ -122,17 +139,29 @@ export const createAppRoutes = (
       tenantCore.accessGuard(getTenantFromRequest(request), {
         owner: request.params.tenant,
       });
-
-      const entity = entityCore.createOrUpdateEntity({
-        entity: request.body as any,
-        tenant: request.params.tenant,
-        entityName: request.params.entity,
-        options: {
-          schemaReconciliationMode: request.query.reconciliationMode,
-          transient: request.query.transient,
-        },
-      });
-      return entity;
+      if (Array.isArray(request.body)) {
+        const result = await entityCore.createOrUpdateEntityList({
+          tenant: request.params.tenant,
+          entityName: request.params.entity,
+          entityList: request.body,
+          options: {
+            schemaReconciliationMode: request.query.reconciliationMode,
+            transient: request.query.transient,
+          },
+        });
+        return result;
+      } else {
+        const entity = entityCore.createOrUpdateEntity({
+          entity: request.body,
+          tenant: request.params.tenant,
+          entityName: request.params.entity,
+          options: {
+            schemaReconciliationMode: request.query.reconciliationMode,
+            transient: request.query.transient,
+          },
+        });
+        return entity;
+      }
     }
   );
 

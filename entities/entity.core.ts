@@ -4,6 +4,7 @@ import { EntityRepository } from "./entities.persistence.ts";
 import isEqual from "https://deno.land/x/lodash@4.17.4-es/isEqual.js";
 import deepMerge from "deepmerge";
 import { TenantsCache } from "../graphql/graphqlSchemasCache.ts";
+import { JSONSchema7 } from "../json-schema/jsonSchemaTypes.ts";
 
 interface EntityCoreArgs {
   persistence: EntityRepository;
@@ -13,13 +14,13 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
   let tenantsCache: TenantsCache | undefined;
 
   const processNewEntitySchema = async ({
-    entity,
+    schema,
     entityName,
     tenant,
     schemaReconciliationMode = "override",
   }: {
     entityName: string;
-    entity: object & { id: string };
+    schema: JSONSchema7;
     tenant: string;
     schemaReconciliationMode?: "merge" | "override";
   }) => {
@@ -28,23 +29,19 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
       tenant,
       entityName
     );
-    let computedJsonSchema = {
-      ...jsonToJsonSchema(entity),
-      title: entityName,
-    };
 
-    if (!isEqual(computedJsonSchema, existingSchema)) {
+    if (!isEqual(schema, existingSchema)) {
       if (schemaReconciliationMode === "merge" && existingSchema) {
-        computedJsonSchema = deepMerge(existingSchema, computedJsonSchema);
+        schema = deepMerge(existingSchema, schema);
       }
-      persistence.setEntiySchema({
+      persistence.setEntitySchema({
         tenant,
         entityName,
-        newSchema: computedJsonSchema,
+        newSchema: schema,
       });
       eventBus.publish({
         queue: "entity-schema.updated",
-        message: { schema: computedJsonSchema, tenant },
+        message: { schema: schema, tenant },
       });
     }
   };
@@ -70,23 +67,26 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
       throw new Error(
         "Entity should have an 'id' field that serves as identifier"
       );
+    const entitySchema = {
+      ...jsonToJsonSchema(entity),
+      title: entityName,
+    };
+    let action: "created" | "updated" = "created";
     if (!options.transient) {
-      const { action } = await persistence.createOrUpdateEntity({
+      const result = await persistence.createOrUpdateEntity({
         tenant,
         entityName,
         entity,
       });
-      processNewEntitySchema({
-        entityName,
-        entity,
-        tenant,
-        schemaReconciliationMode: options.schemaReconciliationMode,
-      });
-      eventBus.publish({ queue: `entity.${action}`, message: { entity } });
-      return entity;
+      action = result.action;
     }
-
-    eventBus.publish({ queue: `entity.created`, message: { entity } });
+    processNewEntitySchema({
+      entityName,
+      schema: entitySchema,
+      tenant,
+      schemaReconciliationMode: options.schemaReconciliationMode,
+    });
+    eventBus.publish({ queue: `entity.${action}`, message: { entity } });
     return entity;
   };
 
@@ -114,6 +114,42 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
     return persistence.getEntityList(p);
   };
 
+  const createOrUpdateEntityList = async ({
+    entityList,
+    entityName,
+    tenant,
+    options = {
+      schemaReconciliationMode: "override",
+      transient: false,
+    },
+  }: {
+    entityName: string;
+    tenant: string;
+    entityList: Array<object & { id: string }>;
+    options?: {
+      schemaReconciliationMode?: "merge" | "override";
+      transient?: boolean;
+    };
+  }) => {
+    const mergedSchema = entityList.reduce<JSONSchema7>(
+      (acc, entity) => deepMerge(acc, jsonToJsonSchema(entity)),
+      { title: entityName }
+    );
+    if (!options.transient) {
+      await persistence.saveEntityList({ tenant, entityName, entityList });
+    }
+    processNewEntitySchema({
+      entityName,
+      schema: mergedSchema,
+      tenant,
+      schemaReconciliationMode: options.schemaReconciliationMode,
+    });
+    entityList.map((entity) => {
+      eventBus.publish({ queue: `entity.created`, message: { entity } });
+    });
+    return entityList;
+  };
+
   return {
     createOrUpdateEntity,
     getEntitySchema,
@@ -123,6 +159,7 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
     setCache: (cache: TenantsCache) => {
       tenantsCache = cache;
     },
+    createOrUpdateEntityList,
   };
 };
 

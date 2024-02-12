@@ -46,7 +46,7 @@ export const createEntitiesMongoRepository = ({
       })) as JSONSchema7;
       return schema;
     },
-    setEntiySchema: async ({ entityName, newSchema, tenant }) => {
+    setEntitySchema: async ({ entityName, newSchema, tenant }) => {
       const collection = getTenantDb(tenant).collection(SCHEMAS_COLLECTION);
       const schema = await collection.updateOne(
         { title: entityName },
@@ -67,6 +67,23 @@ export const createEntitiesMongoRepository = ({
       const collection = getTenantDb(tenant).collection(SCHEMAS_COLLECTION);
       const result = (await collection.find({}).toArray()) as any;
       return result;
+    },
+    saveEntityList: async ({ entityList, entityName, tenant }) => {
+      const collection = getTenantDb(tenant).collection(entityName);
+      const bulk = collection.initializeUnorderedBulkOp();
+      entityList.map((entity) => {
+        bulk
+          .find({ id: entity.id })
+          .upsert()
+          .replaceOne({ ...entity });
+      });
+      const result = await bulk.execute();
+
+      return {
+        inserted: result.insertedCount,
+        updated: result.matchedCount,
+        result: result.getRawResponse(),
+      };
     },
   };
 };
