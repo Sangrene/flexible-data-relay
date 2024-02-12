@@ -155,3 +155,42 @@ Deno.test(
     assertSpyCall(saveEntityPersistenceSpy, 0);
   }
 );
+
+Deno.test(async function canAddMultipleEntitiesAtTheSameTime() {
+  const ENTITY = { id: "id", a: 2, b: "truc", d: false };
+  const OTHER_ENTITY = { id: "id2", a: "truc", b: "truc", c: true };
+  const persistence = createEntityInMemoryRepository();
+  const store = createTenantCache({
+    mode: "local",
+  });
+
+  const core = createEntityCore({ persistence });
+  core.setCache(store);
+  await core.createOrUpdateEntityList({
+    tenant: "tenant",
+    entityName: "entity",
+    entityList: [ENTITY, OTHER_ENTITY],
+  });
+  assertEquals(core.getEntitySchema("entity", "tenant"), {
+    title: "entity",
+    type: "object",
+    properties: {
+      id: { type: "string" },
+      a: { type: "string" },
+      b: { type: "string" },
+      d: { type: "boolean" },
+      c: { type: "boolean" },
+    },
+  });
+  assertEquals(
+    (
+      await core.getEntityList({
+        entityName: "entity",
+        tenant: "tenant",
+        query: "{}",
+      })
+    ).length,
+    2
+  );
+  
+});

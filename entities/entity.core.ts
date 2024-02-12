@@ -33,11 +33,11 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
       title: entityName,
     };
 
-    if (!isEqual(computedJsonSchema, existingSchema)) {
+    if (!isEqual(schema, existingSchema)) {
       if (schemaReconciliationMode === "merge" && existingSchema) {
-        computedJsonSchema = deepMerge(existingSchema, computedJsonSchema);
+        schema = deepMerge(existingSchema, schema);
       }
-      persistence.setEntiySchema({
+      persistence.setEntitySchema({
         tenant,
         entityName,
         newSchema: computedJsonSchema,
@@ -55,7 +55,6 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
     tenant,
     options = {
       schemaReconciliationMode: "override",
-      transient: false,
     },
   }: {
     entityName: string;
@@ -70,23 +69,26 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
       throw new Error(
         "Entity should have an 'id' field that serves as identifier"
       );
+    const entitySchema = {
+      ...jsonToJsonSchema(entity),
+      title: entityName,
+    };
+    let action: "created" | "updated" = "created";
     if (!options.transient) {
-      const { action } = await persistence.createOrUpdateEntity({
+      const result = await persistence.createOrUpdateEntity({
         tenant,
         entityName,
         entity,
       });
-      processNewEntitySchema({
-        entityName,
-        entity,
-        tenant,
-        schemaReconciliationMode: options.schemaReconciliationMode,
-      });
-      eventBus.publish({ queue: `entity.${action}`, message: { entity } });
-      return entity;
+      action = result.action;
     }
-
-    eventBus.publish({ queue: `entity.created`, message: { entity } });
+    processNewEntitySchema({
+      entityName,
+      schema: entitySchema,
+      tenant,
+      schemaReconciliationMode: options.schemaReconciliationMode,
+    });
+    eventBus.publish({ queue: `entity.${action}`, message: { entity } });
     return entity;
   };
 
@@ -127,3 +129,4 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
 };
 
 export type EntityCore = ReturnType<typeof createEntityCore>;
+    createOrUpdateEntityList,
