@@ -18,47 +18,56 @@ import { createWebhookSubscriptionPlugin } from "./subscription/webhookSubscript
 import { createAMQPSubscriptionPlugin } from "./subscription/amqpSubscription.ts";
 import { logger } from "./logging/logger.ts";
 
-// const entityPersistence = createEntityInMemoryRepository();
-// const tenantPersistence = tenantInMemoryRepository();
-await connectClient();
-// Repositories
-const entityPersistence = createEntitiesMongoRepository({ getTenantDb });
-const tenantsPersistence = createTenantsMongoRepository(getMasterDb());
+const startApp = async () => {
+  // const entityPersistence = createEntityInMemoryRepository();
+  // const tenantPersistence = tenantInMemoryRepository();
+  await connectClient();
+  // Repositories
+  const entityPersistence = createEntitiesMongoRepository({ getTenantDb });
+  const tenantsPersistence = createTenantsMongoRepository(getMasterDb());
 
-const entityCore = createEntityCore({ persistence: entityPersistence });
-const tenantCore = createTenantCore({
-  tenantPersistenceHandler: tenantsPersistence,
-});
-const authCore = await createAuthCore({
-  tenantCore,
-});
+  const entityCore = createEntityCore({ persistence: entityPersistence });
+  const tenantCore = createTenantCore({
+    tenantPersistenceHandler: tenantsPersistence,
+  });
+  const authCore = await createAuthCore({
+    tenantCore,
+  });
 
-const cache = createTenantCache({
-  initContent: await tenantCore.getAllSchemas(entityCore),
-  mode: "mongo",
-});
-tenantCore.setCache(cache);
-entityCore.setCache(cache);
+  const cache = createTenantCache({
+    initContent: await tenantCore.getAllSchemas(entityCore),
+    mode: "mongo",
+  });
+  tenantCore.setCache(cache);
+  entityCore.setCache(cache);
 
-const subscriptionPlugins = [];
-subscriptionPlugins.push(createWebhookSubscriptionPlugin());
-if (Deno.env.get("RABBIT_MQ_CONNECTION_STRING")) {
-  subscriptionPlugins.push(
-    await createAMQPSubscriptionPlugin({
-      connectionString: Deno.env.get("RABBIT_MQ_CONNECTION_STRING")!,
-    })
-  );
+  const subscriptionPlugins = [];
+  subscriptionPlugins.push(createWebhookSubscriptionPlugin());
+  if (Deno.env.get("RABBIT_MQ_CONNECTION_STRING")) {
+    subscriptionPlugins.push(
+      await createAMQPSubscriptionPlugin({
+        connectionString: Deno.env.get("RABBIT_MQ_CONNECTION_STRING")!,
+      })
+    );
+  }
+  createSubscriptionManager({
+    subscriptionPlugins: subscriptionPlugins,
+    tenantCore,
+  });
+
+  // Start
+  await runWebServer({
+    entityCore,
+    authCore,
+    tenantCore,
+  });
+
+  logger.info("App successfuly started");
+};
+
+try{
+  await startApp();
+}catch(e){
+  logger.error(e);
+  throw e;
 }
-createSubscriptionManager({
-  subscriptionPlugins: subscriptionPlugins,
-  tenantCore,
-});
-
-// Start
-await runWebServer({
-  entityCore,
-  authCore,
-  tenantCore,
-});
-
-logger.info("App successfuly started");

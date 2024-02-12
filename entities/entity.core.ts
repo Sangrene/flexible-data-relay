@@ -17,14 +17,12 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
     schema,
     entityName,
     tenant,
-    options,
+    schemaReconciliationMode = "override",
   }: {
     entityName: string;
     schema: JSONSchema7;
     tenant: string;
-    options: {
-      schemaReconciliationMode: "merge" | "override";
-    };
+    schemaReconciliationMode?: "merge" | "override";
   }) => {
     if (!tenantsCache) throw new Error("Tenants cache was not set");
     const existingSchema = tenantsCache.getEntitySchemaFromCache(
@@ -32,11 +30,11 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
       entityName
     );
 
-    if (!isEqual(computedJsonSchema, existingSchema)) {
-      if (options.schemaReconciliationMode === "merge" && existingSchema) {
-        computedJsonSchema = deepMerge(existingSchema, computedJsonSchema);
+    if (!isEqual(schema, existingSchema)) {
+      if (schemaReconciliationMode === "merge" && existingSchema) {
+        schema = deepMerge(existingSchema, schema);
       }
-      persistence.setEntiySchema({
+      persistence.setEntitySchema({
         tenant,
         entityName,
         newSchema: schema,
@@ -50,30 +48,44 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
 
   const createOrUpdateEntity = async ({
     entity,
-      transient: false,
     entityName,
     tenant,
     options = {
       schemaReconciliationMode: "override",
+      transient: false,
     },
   }: {
     entityName: string;
     entity: any & { id: string };
     tenant: string;
     options?: {
-      schemaReconciliationMode: "merge" | "override";
+      schemaReconciliationMode?: "merge" | "override";
+      transient?: boolean;
     };
   }) => {
     if (!entity.id)
       throw new Error(
         "Entity should have an 'id' field that serves as identifier"
       );
-    const { action } = await persistence.createOrUpdateEntity({
-      tenant,
+    const entitySchema = {
+      ...jsonToJsonSchema(entity),
+      title: entityName,
+    };
+    let action: "created" | "updated" = "created";
+    if (!options.transient) {
+      const result = await persistence.createOrUpdateEntity({
+        tenant,
+        entityName,
+        entity,
+      });
+      action = result.action;
+    }
+    processNewEntitySchema({
       entityName,
-      entity,
+      schema: entitySchema,
+      tenant,
+      schemaReconciliationMode: options.schemaReconciliationMode,
     });
-    processNewEntitySchema({ entityName, entity, tenant, options });
     eventBus.publish({ queue: `entity.${action}`, message: { entity } });
     return entity;
   };
@@ -102,19 +114,6 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
     return persistence.getEntityList(p);
   };
 
-  return {
-    createOrUpdateEntity,
-    getEntitySchema,
-    getAllEntitiesSchema,
-    getEntityById,
-    getEntityList,
-    setCache: (cache: TenantsCache) => {
-      tenantsCache = cache;
-    },
-  };
-};
-
-export type EntityCore = ReturnType<typeof createEntityCore>;
   const createOrUpdateEntityList = async ({
     entityList,
     entityName,
@@ -148,5 +147,20 @@ export type EntityCore = ReturnType<typeof createEntityCore>;
     entityList.map((entity) => {
       eventBus.publish({ queue: `entity.created`, message: { entity } });
     });
+    return entityList;
   };
 
+  return {
+    createOrUpdateEntity,
+    getEntitySchema,
+    getAllEntitiesSchema,
+    getEntityById,
+    getEntityList,
+    setCache: (cache: TenantsCache) => {
+      tenantsCache = cache;
+    },
+    createOrUpdateEntityList,
+  };
+};
+
+export type EntityCore = ReturnType<typeof createEntityCore>;
