@@ -23,3 +23,4 @@ etc...
 * (Optionally) RabbitMQ instance.
 
 ## Architecture
+<img src="./diagram.svg">
