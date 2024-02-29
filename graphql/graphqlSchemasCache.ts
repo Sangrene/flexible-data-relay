@@ -104,12 +104,12 @@ type CacheContent = {
 
 type TenantCacheProps =
   | { mode: "mongo"; mongoService: MongoService }
-  | { mode: "local"; mongoService: undefined };
-  
+  | { mode: "local" };
+
 export const createTenantCache = ({
   initContent,
   mode,
-  mongoService,
+  ...rest
 }: {
   initContent?: CacheContent;
 } & TenantCacheProps) => {
@@ -122,7 +122,7 @@ export const createTenantCache = ({
   const getEntitySchemaFromCache = (tenant: string, entityName: string) => {
     return schemas[tenant]?.entities?.find((ent) => ent.title === entityName);
   };
-  schemaChangeHandlersFactories[mode]({ schemas, mongoService }).init();
+  schemaChangeHandlersFactories[mode]({ schemas, ...rest }).init();
 
   return {
     getTenantCache,
