@@ -1,11 +1,22 @@
 import { ChangeStreamDocument } from "mongodb";
 import { eventBus } from "../event/eventBus.ts";
 import { JSONSchema7 } from "../json-schema/jsonSchemaTypes.ts";
-import { getMasterDb, getTenantDb } from "../persistence/mongo.ts";
 import { getKeys } from "../utils/objectUtils.ts";
 import { logger } from "../logging/logger.ts";
+import { MongoService } from "../persistence/mongo.ts";
 
-const mongoMode = (schemas: CacheContent) => {
+type SchemaChangeHandler = {
+  schemas: CacheContent;
+  mongoService?: MongoService;
+};
+const createMongoSchemaChangeHandler = ({
+  mongoService,
+  schemas,
+}: SchemaChangeHandler) => {
+  if (!mongoService)
+    throw new Error(
+      "Mongo service is not provided to the MongoSchemaChangeHandler"
+    );
   const onChangeEntitySchema =
     (tenant: string) => (e: ChangeStreamDocument<JSONSchema7>) => {
       if (e.operationType === "insert") {
@@ -27,7 +38,8 @@ const mongoMode = (schemas: CacheContent) => {
     };
 
   const listenToTenantSchemaUpdate = (tenant: string) => {
-    const tenantStream = getTenantDb(tenant)
+    const tenantStream = mongoService
+      .getTenantDb(tenant)
       .collection<JSONSchema7>("schemas")
       .watch([], { fullDocument: "updateLookup" });
     logger.info(`Cache listening to change on ${tenant}`);
@@ -35,7 +47,7 @@ const mongoMode = (schemas: CacheContent) => {
   };
 
   const init = () => {
-    const masterStream = getMasterDb().watch();
+    const masterStream = mongoService.getMasterDb().watch();
     masterStream.on("change", (e) => {
       if (e.operationType === "insert") {
         schemas[e.fullDocument.name] = { entities: [] };
@@ -55,7 +67,7 @@ const mongoMode = (schemas: CacheContent) => {
   };
 };
 
-const localMode = (schemas: CacheContent) => {
+const createLocalSchemaChangeHandler = ({ schemas }: SchemaChangeHandler) => {
   const init = () => {
     eventBus.subscribe({
       queue: "entity-schema.updated",
@@ -81,21 +93,26 @@ const localMode = (schemas: CacheContent) => {
   return { init };
 };
 
-const cacheMode = {
-  local: localMode,
-  mongo: mongoMode,
+const schemaChangeHandlersFactories = {
+  local: createLocalSchemaChangeHandler,
+  mongo: createMongoSchemaChangeHandler,
 };
 
 type CacheContent = {
   [tenant: string]: { entities?: JSONSchema7[] };
 };
+
+type TenantCacheProps =
+  | { mode: "mongo"; mongoService: MongoService }
+  | { mode: "local"; mongoService: undefined };
+  
 export const createTenantCache = ({
   initContent,
   mode,
+  mongoService,
 }: {
   initContent?: CacheContent;
-  mode: "local" | "mongo";
-}) => {
+} & TenantCacheProps) => {
   const schemas: CacheContent = initContent || {};
 
   const getTenantCache = (tenant: string) => {
@@ -105,8 +122,7 @@ export const createTenantCache = ({
   const getEntitySchemaFromCache = (tenant: string, entityName: string) => {
     return schemas[tenant]?.entities?.find((ent) => ent.title === entityName);
   };
-
-  cacheMode[mode](schemas).init();
+  schemaChangeHandlersFactories[mode]({ schemas, mongoService }).init();
 
   return {
     getTenantCache,

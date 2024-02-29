@@ -8,11 +8,7 @@ import { createTenantCore } from "./tenants/tenant.core.ts";
 import { createTenantCache } from "./graphql/graphqlSchemasCache.ts";
 import { createTenantsMongoRepository } from "./tenants/tenantsMongoRepository.ts";
 import { createEntitiesMongoRepository } from "./entities/entitiesMongoRepository.ts";
-import {
-  connectClient,
-  getMasterDb,
-  getTenantDb,
-} from "./persistence/mongo.ts";
+import { createMongoService } from "./persistence/mongo.ts";
 import { createSubscriptionManager } from "./subscription/subscriptionManager.ts";
 import { createWebhookSubscriptionPlugin } from "./subscription/webhookSubscription.ts";
 import { createAMQPSubscriptionPlugin } from "./subscription/amqpSubscription.ts";
@@ -21,10 +17,11 @@ import { logger } from "./logging/logger.ts";
 const startApp = async () => {
   // const entityPersistence = createEntityInMemoryRepository();
   // const tenantPersistence = tenantInMemoryRepository();
-  await connectClient();
-  // Repositories
-  const entityPersistence = createEntitiesMongoRepository({ getTenantDb });
-  const tenantsPersistence = createTenantsMongoRepository(getMasterDb());
+
+  const mongoService = await createMongoService();
+
+  const entityPersistence = createEntitiesMongoRepository({ mongoService });
+  const tenantsPersistence = createTenantsMongoRepository(mongoService);
 
   const entityCore = createEntityCore({ persistence: entityPersistence });
   const tenantCore = createTenantCore({
@@ -37,6 +34,7 @@ const startApp = async () => {
   const cache = createTenantCache({
     initContent: await tenantCore.getAllSchemas(entityCore),
     mode: "mongo",
+    mongoService,
   });
   tenantCore.setCache(cache);
   entityCore.setCache(cache);
@@ -65,9 +63,9 @@ const startApp = async () => {
   logger.info("App successfuly started");
 };
 
-try{
+try {
   await startApp();
-}catch(e){
+} catch (e) {
   logger.error(e);
   throw e;
 }
