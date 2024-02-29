@@ -1,4 +1,4 @@
-import { Collection, Db, ObjectId } from "mongodb";
+import { Collection, ObjectId } from "mongodb";
 import { TenantRepository } from "./tenant.persistence.ts";
 import { Tenant } from "./tenant.model.ts";
 import { MongoService } from "../persistence/mongo.ts";

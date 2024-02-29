@@ -1,4 +1,3 @@
-import { Db } from "mongodb";
 import { EntityRepository } from "./entities.persistence.ts";
 import { JSONSchema7 } from "../json-schema/jsonSchemaTypes.ts";
 import { MongoService } from "../persistence/mongo.ts";
