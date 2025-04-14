@@ -1,7 +1,4 @@
-import {
-  assertEquals,
-  assertThrows,
-} from "https://deno.land/std@0.212.0/assert/mod.ts";
+import { assertEquals } from "https://deno.land/std@0.212.0/assert/mod.ts";
 
 import { createTenantCore } from "./tenant.core.ts";
 import { createTenantInMemoryRepository } from "./tenantsInMemoryRepository.ts";
@@ -53,7 +50,10 @@ Deno.test(async function canTenantHaveAccessToHisOwnResource() {
   entityCore.setCache(cache);
 
   const tenant = await tenantCore.createTenant("tenant");
-  assertEquals(tenantCore.accessGuard(tenant, { owner: "tenant" })._unsafeUnwrap(), true);
+  assertEquals(
+    tenantCore.accessGuard(tenant, { owner: "tenant" })._unsafeUnwrap(),
+    true
+  );
 });
 
 Deno.test(
@@ -101,7 +101,10 @@ Deno.test(
       allowedTenantName: "tenant2",
     });
     const tenant2 = await tenantPersistence.getTenantByName("tenant2");
-    assertEquals(tenantCore.accessGuard(tenant2!, { owner: "tenant1" })._unsafeUnwrap(), true);
+    assertEquals(
+      tenantCore.accessGuard(tenant2!, { owner: "tenant1" })._unsafeUnwrap(),
+      true
+    );
   }
 );
 

@@ -8,7 +8,7 @@ import {
   createHash,
   randomBytes,
 } from "https://deno.land/std@0.110.0/node/crypto.ts";
-import { Result, err, ok, okAsync } from "neverthrow";
+import { Result, err, ok } from "neverthrow";
 
 interface TenantCoreArgs {
   tenantPersistenceHandler: TenantRepository;
