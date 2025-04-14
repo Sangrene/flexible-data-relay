@@ -1,8 +1,9 @@
-import { graphql } from "graphql";
+import { ExecutionResult, graphql } from "graphql";
 import { TenantCore } from "./tenant.core.ts";
 import { EntityCore } from "../entities/entity.core.ts";
+import { ok, err, Result } from "neverthrow";
 
-export const executeSourceAgainstSchema = async ({
+export const executeSourceAgainstSchema = ({
   source,
   tenant,
   tenantCore,
@@ -12,14 +13,19 @@ export const executeSourceAgainstSchema = async ({
   entityCore: EntityCore;
   tenant: string;
   source: string;
-}) => {
-  const schema = await tenantCore.getTenantGraphqlSchema({
-    tenant,
-    entityCore,
-  });
-  if (!schema) throw new Error(`No tenant associated with ${tenant}`);
-  return graphql({
-    schema,
-    source,
-  });
+}): Result<
+  Promise<ExecutionResult>,
+  {
+    error: "TENANT_CACHE_NOT_SET_IN_CORE";
+  }
+> => {
+  return tenantCore
+    .getTenantGraphqlSchema({
+      tenant,
+      entityCore,
+    })
+    .match(
+      (schema) => ok(graphql({ schema, source })),
+      (e) => err(e)
+    );
 };

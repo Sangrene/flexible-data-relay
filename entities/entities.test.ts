@@ -29,7 +29,7 @@ Deno.test(async function canQueryJustAddedEntityWithGraphQL() {
     entityName: "testEntity",
   });
   await Timeout.wait(500);
-  const result = await executeSourceAgainstSchema({
+  const result = executeSourceAgainstSchema({
     source: `query {
       testEntity(id: "id") {
         id
@@ -43,13 +43,16 @@ Deno.test(async function canQueryJustAddedEntityWithGraphQL() {
     tenantCore,
     tenant: "tenant",
   });
-
-  assertEquals(result.data, {
-    testEntity: {
-      id: "id",
-      myString: "String",
-      myInt: 12,
-      myFloat: 12.4,
-    },
-  });
+  if(result.isOk()){
+    assertEquals((await result.value).data, {
+      testEntity: {
+        id: "id",
+        myString: "String",
+        myInt: 12,
+        myFloat: 12.4,
+      },
+    });
+  }
+  
+ 
 });

@@ -1,3 +1,4 @@
+import { GraphQLSchema } from "graphql";
 import { EntityCore } from "../entities/entity.core.ts";
 import { TenantsCache } from "../graphql/graphqlSchemasCache.ts";
 import { createGraphqlSchemaFromEntitiesSchema } from "../graphql/jsonToGraphql.ts";
@@ -7,6 +8,7 @@ import {
   createHash,
   randomBytes,
 } from "https://deno.land/std@0.110.0/node/crypto.ts";
+import { Result, err, ok, okAsync } from "neverthrow";
 
 interface TenantCoreArgs {
   tenantPersistenceHandler: TenantRepository;
@@ -16,15 +18,16 @@ export const createTenantCore = ({
 }: TenantCoreArgs) => {
   let tenantsCache: TenantsCache | undefined;
 
-  const getTenantGraphqlSchema = async ({
+  const getTenantGraphqlSchema = ({
     tenant,
     entityCore,
   }: {
     tenant: string;
     entityCore: EntityCore;
-  }) => {
-    if (!tenantsCache)
-      throw new Error("Tenants cache is not set in tenant core.");
+  }): Result<GraphQLSchema, { error: "TENANT_CACHE_NOT_SET_IN_CORE" }> => {
+    if (!tenantsCache) {
+      return err({ error: "TENANT_CACHE_NOT_SET_IN_CORE" });
+    }
     const val = tenantsCache.getTenantCache(tenant);
     const graphqlSchema = createGraphqlSchemaFromEntitiesSchema(
       tenant,
@@ -34,7 +37,7 @@ export const createTenantCore = ({
       })) || [],
       entityCore
     );
-    return graphqlSchema;
+    return ok(graphqlSchema);
   };
 
   const createTenant = async (tenantName: string) => {
@@ -75,25 +78,34 @@ export const createTenantCore = ({
   }: {
     subscription: Omit<Subscription, "key">;
     tenant: Tenant;
-  }) => {
-    if (!tenant.accessAllowed.some((acc) => acc.owner === subscription.owner))
-      throw new Error(
-        "You don't have permission to subscribe to this resource"
-      );
+  }): Promise<
+    Result<
+      Subscription & { key: string },
+      { error: "NO_PERMISSION_TO_SUBSCRIBE_TO_THIS_RESOURCE" }
+    >
+  > => {
+    if (!tenant.accessAllowed.some((acc) => acc.owner === subscription.owner)) {
+      return err({ error: "NO_PERMISSION_TO_SUBSCRIBE_TO_THIS_RESOURCE" });
+    }
     const savedSubScription = { ...subscription, key: crypto.randomUUID() };
     await tenantPersistenceHandler.addSubscription({
       subscription: savedSubScription,
       tenantId: tenant._id,
     });
 
-    return savedSubScription;
+    return ok(savedSubScription);
   };
 
-  const accessGuard = (tenant: Tenant, { owner }: { owner: string }) => {
-    if (tenant.name === owner) return true;
+  const accessGuard = (
+    tenant: Tenant,
+    { owner }: { owner: string }
+  ): Result<true, { error: "NO_ACCESS" }> => {
+    if (tenant.name === owner) return ok(true);
     const hasAccess = tenant.accessAllowed.some((item) => item.owner === owner);
-    if (!hasAccess) throw new Error("You don't have access to this resource");
-    return true;
+    if (!hasAccess) {
+      return err({ error: "NO_ACCESS" });
+    }
+    return ok(true);
   };
 
   const getAllTenants = async () => {

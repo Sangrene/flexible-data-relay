@@ -6,6 +6,7 @@ import { createEntityInMemoryRepository } from "../entities/entitiesinMemoryRepo
 import { createTenantCache } from "../graphql/graphqlSchemasCache.ts";
 import { assertExists } from "https://deno.land/std@0.209.0/assert/assert_exists.ts";
 import { createEntityCore } from "../entities/entity.core.ts";
+import { loadEnv } from "../env/loadEnv.ts";
 
 Deno.test(async function canGenerateTenantTokenFromIdAndCredentials() {
   const tenantPersistence = createTenantInMemoryRepository();
@@ -20,7 +21,7 @@ Deno.test(async function canGenerateTenantTokenFromIdAndCredentials() {
   });
   tenantCore.setCache(cache);
 
-  const authCore = await createAuthCore({ tenantCore });
+  const authCore = await createAuthCore({ tenantCore, env: loadEnv() });
   const newTenant = await tenantCore.createTenant("tenant");
   const token = await authCore.generateTokenFromCredentials({
     clientId: newTenant._id,
@@ -42,7 +43,7 @@ Deno.test(async function canGetTenantUsingToken() {
   });
   tenantCore.setCache(cache);
 
-  const authCore = await createAuthCore({ tenantCore });
+  const authCore = await createAuthCore({ tenantCore, env: loadEnv() });
   const newTenant = await tenantCore.createTenant("tenant");
   const token = await authCore.generateTokenFromCredentials({
     clientId: newTenant._id,

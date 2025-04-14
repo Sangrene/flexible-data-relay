@@ -8,6 +8,7 @@
   },
   "imports": {
     "fastify": "npm:fastify",
+    "neverthrow": "npm:neverthrow@^8.2.0",
     "to-json-schema": "npm:to-json-schema",
     "graphql": "npm:graphql",
     "mongodb": "npm:mongodb",

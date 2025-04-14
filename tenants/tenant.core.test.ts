@@ -53,7 +53,7 @@ Deno.test(async function canTenantHaveAccessToHisOwnResource() {
   entityCore.setCache(cache);
 
   const tenant = await tenantCore.createTenant("tenant");
-  assertEquals(tenantCore.accessGuard(tenant, { owner: "tenant" }), true);
+  assertEquals(tenantCore.accessGuard(tenant, { owner: "tenant" })._unsafeUnwrap(), true);
 });
 
 Deno.test(
@@ -73,7 +73,8 @@ Deno.test(
     entityCore.setCache(cache);
 
     const tenant = await tenantCore.createTenant("tenant");
-    assertThrows(() => tenantCore.accessGuard(tenant, { owner: "" }), Error);
+    const guardResult = tenantCore.accessGuard(tenant, { owner: "" });
+    assertEquals(guardResult.isErr(), true);
   }
 );
 
@@ -100,7 +101,7 @@ Deno.test(
       allowedTenantName: "tenant2",
     });
     const tenant2 = await tenantPersistence.getTenantByName("tenant2");
-    assertEquals(tenantCore.accessGuard(tenant2!, { owner: "tenant1" }), true);
+    assertEquals(tenantCore.accessGuard(tenant2!, { owner: "tenant1" })._unsafeUnwrap(), true);
   }
 );
 
@@ -139,16 +140,18 @@ Deno.test(async function sendWebhookRequestIfSubscribedAndEntityIsUpdated() {
     allowedTenantName: "tenant2",
   });
 
-  const subscription = await tenantCore.createSubscription({
-    subscription: {
-      owner: "tenant1",
-      entityName: "entityTest",
-      webhook: {
-        url: "https://localhost:3000/test",
+  const subscription = (
+    await tenantCore.createSubscription({
+      subscription: {
+        owner: "tenant1",
+        entityName: "entityTest",
+        webhook: {
+          url: "https://localhost:3000/test",
+        },
       },
-    },
-    tenant: tenant2,
-  });
+      tenant: tenant2,
+    })
+  )._unsafeUnwrap();
 
   await entityCore.createOrUpdateEntity({
     entity: { name: "test", id: "id" },
