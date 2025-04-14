@@ -100,8 +100,8 @@ export const createAppRoutes = (
         querystring: {
           type: "object",
           properties: {
-            reconciliationMode: { type: "string", enum: ["override", "merge"] },
-            transient: { type: "boolean" },
+            reconciliationMode: { type: "string", enum: ["override", "merge"], description: "If 'override', will replace existing object. If 'merge', it will merge into it, if it exists." },
+            transient: { type: "boolean", description: "If true, the data won't be stored but simply dispatch to subscribers." },
           },
         },
         body: {
