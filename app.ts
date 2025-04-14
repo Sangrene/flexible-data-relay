@@ -9,7 +9,7 @@ import { createTenantCache } from "./graphql/graphqlSchemasCache.ts";
 import { createTenantsMongoRepository } from "./tenants/tenantsMongoRepository.ts";
 import { createEntitiesMongoRepository } from "./entities/entitiesMongoRepository.ts";
 import { createMongoService } from "./persistence/mongo.ts";
-import { createSubscriptionManager } from "./subscription/subscriptionManager.ts";
+import { createSubscriptionManager, SubscriptionPlugin } from "./subscription/subscriptionManager.ts";
 import { createWebhookSubscriptionPlugin } from "./subscription/webhookSubscription.ts";
 import { createAMQPSubscriptionPlugin } from "./subscription/amqpSubscription.ts";
 import { logger } from "./logging/logger.ts";
@@ -39,7 +39,7 @@ const startApp = async () => {
   tenantCore.setCache(cache);
   entityCore.setCache(cache);
 
-  const subscriptionPlugins = [];
+  const subscriptionPlugins: SubscriptionPlugin[] = [];
   subscriptionPlugins.push(createWebhookSubscriptionPlugin());
   if (Deno.env.get("RABBIT_MQ_CONNECTION_STRING")) {
     subscriptionPlugins.push(
