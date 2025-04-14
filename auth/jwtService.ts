@@ -4,28 +4,28 @@ import {
   getNumericDate,
 } from "https://deno.land/x/djwt@v3.0.1/mod.ts";
 import "https://deno.land/std@0.209.0/dotenv/load.ts";
+import { Env } from "../env/loadEnv.ts";
 
-const keyConfig: {
-  algo: HmacImportParams;
-  extractable: true;
-  keyUsages: KeyUsage[];
-} = {
-  algo: { name: "HMAC", hash: "SHA-512" },
-  extractable: true,
-  keyUsages: ["sign", "verify"],
-} as const;
+const createJwtService = async (env: Env) => {
+  const keyConfig: {
+    algo: HmacImportParams;
+    extractable: true;
+    keyUsages: KeyUsage[];
+  } = {
+    algo: { name: "HMAC", hash: "SHA-512" },
+    extractable: true,
+    keyUsages: ["sign", "verify"],
+  } as const;
 
-const storedKey: JsonWebKey = {
-  alg: "HS512",
-  ext: true,
-  k:
-    Deno.env.get("AUTH_SECRET_KEY") ||
-    "WGnzrQxmNpjDbXLw4b8g6JUq1-X4LtsyXgi9SslCrTRtAlNysQyC7_beT-AnB-sWJX60Rf-MqTt9-CrcN67IBXBZmH0QGL4Zqg6T_M6FQWuA43XNLErBeJsaaeDF3Jp1-m2-WRG4usPzzb6SSZ1H3CGZBBc6zi_5nfhLd7HX7j0",
-  key_ops: ["sign", "verify"],
-  kty: "oct",
-};
-
-const createJwtService = async () => {
+  const storedKey: JsonWebKey = {
+    alg: "HS512",
+    ext: true,
+    k:
+      env.AUTH_SECRET_KEY ||
+      "WGnzrQxmNpjDbXLw4b8g6JUq1-X4LtsyXgi9SslCrTRtAlNysQyC7_beT-AnB-sWJX60Rf-MqTt9-CrcN67IBXBZmH0QGL4Zqg6T_M6FQWuA43XNLErBeJsaaeDF3Jp1-m2-WRG4usPzzb6SSZ1H3CGZBBc6zi_5nfhLd7HX7j0",
+    key_ops: ["sign", "verify"],
+    kty: "oct",
+  };
   const key = await crypto.subtle.importKey(
     "jwk",
     storedKey,
@@ -35,7 +35,7 @@ const createJwtService = async () => {
   );
 
   const createJWT = async (
-    payload: Record<string, string | number | boolean> 
+    payload: Record<string, string | number | boolean>
   ) => {
     const jwt = await create(
       { alg: "HS512", typ: "JWT" },

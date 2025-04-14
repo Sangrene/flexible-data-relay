@@ -1,8 +1,10 @@
+import { Env } from "../env/loadEnv.ts";
 import { TenantCore } from "../tenants/tenant.core.ts";
 import createJwtService from "./jwtService.ts";
 
 interface AuthServerProps {
   tenantCore: TenantCore;
+  env: Env;
 }
 
 class WrongCredentialsError extends Error {
@@ -11,8 +13,8 @@ class WrongCredentialsError extends Error {
   }
 }
 
-export const createAuthCore = async ({ tenantCore }: AuthServerProps) => {
-  const jwtService = await createJwtService();
+export const createAuthCore = async ({ tenantCore,env }: AuthServerProps) => {
+  const jwtService = await createJwtService(env);
   const generateTokenFromCredentials = async ({
     clientId,
     clientSecret,
@@ -35,7 +37,7 @@ export const createAuthCore = async ({ tenantCore }: AuthServerProps) => {
   };
 
   const generateAdminTokenFromSecret = async (secret: string) => {
-    const adminSecret = Deno.env.get("ADMIN_SECRET");
+    const adminSecret = env.ADMIN_SECRET;
     if (!adminSecret) return "Admin secret is not setup";
     if (secret !== adminSecret) return "Secret not match";
     const token = await jwtService.createJWT({ admin: true });

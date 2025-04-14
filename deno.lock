@@ -4,6 +4,7 @@
     "npm:@fastify/swagger-ui@*": "2.1.0",
     "npm:@fastify/swagger@*": "8.14.0",
     "npm:@jmondi/oauth2-server@*": "3.0.2",
+    "npm:@types/node@*": "22.12.0",
     "npm:@types/simple-oauth2@*": "5.0.7",
     "npm:bcryptjs@*": "2.4.3",
     "npm:deepmerge@*": "4.3.1",
@@ -212,6 +213,12 @@
     },
     "@sideway/pinpoint@2.0.0": {
       "integrity": "sha512-RNiOoTPkptFtSVzQevY/yWtZwf/RxyVnPy/OcA9HBM3MlGDnBEYL5B41H0MTn0Uec8Hi+2qUtTfG2WWZBmMejQ=="
+    },
+    "@types/node@22.12.0": {
+      "integrity": "sha512-Fll2FZ1riMjNmlmJOdAyY5pUbkftXslB5DgEzlIuNaiWhXd00FhWxVC/r4yV/4wBb9JfImTu+jiSvXTkJ7F/gA==",
+      "dependencies": [
+        "undici-types"
+      ]
     },
     "@types/simple-oauth2@5.0.7": {
       "integrity": "sha512-8JbWVJbiTSBQP/7eiyGKyXWAqp3dKQZpaA+pdW16FCi32ujkzRMG8JfjoAzdWt6W8U591ZNdHcPtP2D7ILTKuA=="
@@ -1241,6 +1248,9 @@
     },
     "uncrypto@0.1.3": {
       "integrity": "sha512-Ql87qFHB3s/De2ClA9e0gsnS6zXG27SkTiSJwjCc9MebbfapQfuPzumMIUMi38ezPZVNFcHI9sUIepeQfw8J8Q=="
+    },
+    "undici-types@6.20.0": {
+      "integrity": "sha512-Ny6QZ2Nju20vw1SRHe3d9jVu6gJ+4e3+MMpqu7pqE5HT6WsTSlce++GQmK5UXS8mzV8DSYHrQH+Xrf2jVcuKNg=="
     },
     "unenv@1.9.0": {
       "integrity": "sha512-QKnFNznRxmbOF1hDgzpqrlIf6NC5sbZ2OJ+5Wl3OX8uM+LUJXbj4TXvLJCtwbPTmbMHCLIz6JLKNinNsMShK9g==",

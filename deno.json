@@ -1,6 +1,7 @@
 {
   "tasks": {
     "dev": "deno run --watch --allow-read --allow-env --allow-sys --allow-net app.ts",
+    "run-mongo": "mongod --dbpath ~/data/db --logpath ~/data/log/mongodb/mongo.log --replSet rs0",
     "run-migration": "migrate-mongo up",
     "test:watch": "deno test -A --watch",
     "get-coverage": "deno test --coverage=cov_profile -A && deno coverage cov_profile"

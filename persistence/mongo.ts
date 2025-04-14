@@ -1,4 +1,5 @@
 import { Db, MongoClient } from "mongodb";
+import { Env } from "../env/loadEnv.ts";
 
 const connectClient = async (client: MongoClient) => {
   await client.connect();
@@ -20,9 +21,9 @@ const createGetMasterDb =
 
 type TenantsDbMap = { [tenant: string]: Db };
 
-export const createMongoService = async () => {
+export const createMongoService = async (env: Env) => {
   const client = new MongoClient(
-    Deno.env.get("MONGODB_CONNECTION_STRING") || "mongodb://localhost:27017"
+    env.MONGODB_CONNECTION_STRING || "mongodb://localhost:27017"
   );
   const tenantsDB: TenantsDbMap = {};
 
