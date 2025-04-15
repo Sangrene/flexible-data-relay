@@ -45,10 +45,11 @@ Deno.test(async function canGetTenantUsingToken() {
 
   const authCore = await createAuthCore({ tenantCore, env: loadEnv() });
   const newTenant = await tenantCore.createTenant("tenant");
-  const token = await authCore.generateTokenFromCredentials({
+  const token = (await authCore.generateTokenFromCredentials({
     clientId: newTenant._id,
     clientSecret: newTenant.lastSecret,
-  });
+  }))._unsafeUnwrap();
+
   const gottenTenant = await authCore.getTenantFromToken(token);
   assertEquals(newTenant, gottenTenant);
 });

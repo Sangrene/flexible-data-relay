@@ -101,13 +101,31 @@ export const runWebServer = async ({
         },
       },
     },
-    async (req) => {
-      return {
-        Bearer: await authCore.generateTokenFromCredentials({
+    async (req, rep) => {
+      return (
+        await authCore.generateTokenFromCredentials({
           clientId: req.body.clientId,
           clientSecret: req.body.clientSecret,
-        }),
-      };
+        })
+      ).match(
+        (token) => {
+          return { Bearer: token };
+        },
+        ({ error }) => {
+          if (error === "NO_TENANT_WITH_THIS_ID") {
+            return rep.status(404).send({
+              error: "NO_TENANT_WITH_THIS_ID",
+              message: "No tenant with this id",
+            });
+          }
+          if (error === "BAD_CREDENTIALS") {
+            return rep.status(401).send({
+              error: "BAD_CREDENTIALS",
+              message: "Bad credentials",
+            });
+          }
+        }
+      );
     }
   );
 
