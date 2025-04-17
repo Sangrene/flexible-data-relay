@@ -3,7 +3,7 @@ import { createAuthCore } from "./auth.ts";
 import { createTenantCore } from "../tenants/tenant.core.ts";
 import { createTenantInMemoryRepository } from "../tenants/tenantsInMemoryRepository.ts";
 import { createEntityInMemoryRepository } from "../entities/entitiesinMemoryRepository.ts";
-import { createTenantCache } from "../graphql/graphqlSchemasCache.ts";
+import { createLocalSchemaChangeHandler, createTenantCache } from "../graphql/graphqlSchemasCache.ts";
 import { assertExists } from "https://deno.land/std@0.209.0/assert/assert_exists.ts";
 import { createEntityCore } from "../entities/entity.core.ts";
 import { loadEnv } from "../env/loadEnv.ts";
@@ -17,7 +17,7 @@ Deno.test(async function canGenerateTenantTokenFromIdAndCredentials() {
   });
   const cache = createTenantCache({
     initContent: await tenantCore.getAllSchemas(entityCore),
-    mode: "local",
+    createSchemaChangeHandler: createLocalSchemaChangeHandler(),
   });
   tenantCore.setCache(cache);
 
@@ -39,7 +39,7 @@ Deno.test(async function canGetTenantUsingToken() {
   });
   const cache = createTenantCache({
     initContent: await tenantCore.getAllSchemas(entityCore),
-    mode: "local",
+    createSchemaChangeHandler: createLocalSchemaChangeHandler(),
   });
   tenantCore.setCache(cache);
 
