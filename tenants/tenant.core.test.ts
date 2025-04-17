@@ -2,7 +2,10 @@ import { assertEquals } from "https://deno.land/std@0.212.0/assert/mod.ts";
 
 import { createTenantCore } from "./tenant.core.ts";
 import { createTenantInMemoryRepository } from "./tenantsInMemoryRepository.ts";
-import { createTenantCache } from "../graphql/graphqlSchemasCache.ts";
+import {
+  createLocalSchemaChangeHandler,
+  createTenantCache,
+} from "../graphql/graphqlSchemasCache.ts";
 import { createEntityInMemoryRepository } from "../entities/entitiesinMemoryRepository.ts";
 import { createEntityCore } from "../entities/entity.core.ts";
 import {
@@ -24,7 +27,7 @@ Deno.test(async function createTenantWithRightSchema() {
   });
   const cache = createTenantCache({
     initContent: await tenantCore.getAllSchemas(entityCore),
-    mode: "local",
+    createSchemaChangeHandler: createLocalSchemaChangeHandler(),
   });
   tenantCore.setCache(cache);
   entityCore.setCache(cache);
@@ -44,7 +47,7 @@ Deno.test(async function canTenantHaveAccessToHisOwnResource() {
   });
   const cache = createTenantCache({
     initContent: await tenantCore.getAllSchemas(entityCore),
-    mode: "local",
+    createSchemaChangeHandler: createLocalSchemaChangeHandler(),
   });
   tenantCore.setCache(cache);
   entityCore.setCache(cache);
@@ -67,7 +70,7 @@ Deno.test(
     });
     const cache = createTenantCache({
       initContent: await tenantCore.getAllSchemas(entityCore),
-      mode: "local",
+      createSchemaChangeHandler: createLocalSchemaChangeHandler(),
     });
     tenantCore.setCache(cache);
     entityCore.setCache(cache);
@@ -83,13 +86,12 @@ Deno.test(
     const tenantPersistence = createTenantInMemoryRepository();
     const entityPersistence = createEntityInMemoryRepository();
     const entityCore = createEntityCore({ persistence: entityPersistence });
-
     const tenantCore = createTenantCore({
       tenantPersistenceHandler: tenantPersistence,
     });
     const cache = createTenantCache({
       initContent: await tenantCore.getAllSchemas(entityCore),
-      mode: "local",
+      createSchemaChangeHandler: createLocalSchemaChangeHandler(),
     });
     tenantCore.setCache(cache);
     entityCore.setCache(cache);
@@ -124,7 +126,7 @@ Deno.test(async function sendWebhookRequestIfSubscribedAndEntityIsUpdated() {
   });
   const cache = createTenantCache({
     initContent: await tenantCore.getAllSchemas(entityCore),
-    mode: "local",
+    createSchemaChangeHandler: createLocalSchemaChangeHandler(),
   });
   tenantCore.setCache(cache);
   entityCore.setCache(cache);

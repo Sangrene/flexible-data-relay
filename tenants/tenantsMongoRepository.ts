@@ -5,9 +5,11 @@ import { MongoService } from "../persistence/mongo.ts";
 
 const TENANT_COLLECTION_NAME = "tenant";
 
-export const createTenantsMongoRepository = (
-  mongoService: MongoService
-): TenantRepository => {
+export const createTenantsMongoRepository = ({
+  mongoService,
+}: {
+  mongoService: MongoService;
+}): TenantRepository => {
   return {
     getTenantById: async (tenantId) => {
       const collection = mongoService

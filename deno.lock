@@ -1541,6 +1541,7 @@
     "https://deno.land/x/amqp@v0.23.1/src/amqp_connect_options.ts": "9bc876cd538e14b9839451e62f7a0eff509ec7d6417c980acc5acf7af567e63f",
     "https://deno.land/x/amqp@v0.23.1/src/amqp_connection.ts": "af5a0583885cf22a6308df76830c6b17d2cba352c8a03672dc9fad56b799336c",
     "https://deno.land/x/amqp@v0.23.1/src/amqp_constants.ts": "2a1b2c95a27fac8d4179ac3418b6ed92d77e133d77b7733848f6b100a066d3ca",
+    "https://deno.land/x/amqp@v0.23.1/src/amqp_frame.ts": "6d78c6e9d4542070b3a03b3510fc80cce414715c9fedbdfc6525be365454cb59",
     "https://deno.land/x/amqp@v0.23.1/src/amqp_frame_reader.ts": "89e0fc54cef94fd35aa6bc39d638cf21a663c0a959afde8a2bd362dbbfcd209c",
     "https://deno.land/x/amqp@v0.23.1/src/amqp_multiplexer.ts": "26fc8989299b44da9012fb4ac769ae9f88ba692bca7d9a0dff3d075641ca65d8",
     "https://deno.land/x/amqp@v0.23.1/src/amqp_socket.ts": "e4f1a54d13f0252097b3075dc6cf2de1efe303fdabbdfdeea9ecec7994beccc1",

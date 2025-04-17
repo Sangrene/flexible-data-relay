@@ -8,6 +8,7 @@ import fastifySwaggerUIPlugin from "@fastify/swagger-ui";
 import { createAppRoutes } from "./appRoutes.ts";
 import { createAdminRoutes } from "./adminRoutes.ts";
 import { logger } from "../logging/logger.ts";
+import { AddressInfo } from "node:net";
 
 type RequestWithTenant = FastifyRequest & { tenant?: Tenant };
 
@@ -142,7 +143,11 @@ export const runWebServer = async ({
   await fastify.register(
     async (fastify, _, done) => {
       fastify.addHook("preHandler", async (req: RequestWithTenant) => {
-        const tenant = await authCore.getTenantFromToken(req.headers.bearer);
+        const bearer = req.headers.bearer;
+        if (typeof bearer !== "string") {
+          throw new Error("Bearer token format error");
+        }
+        const tenant = await authCore.getTenantFromToken(bearer);
         if (!tenant) throw new Error("No tenant");
         req.tenant = tenant;
       });
@@ -159,5 +164,5 @@ export const runWebServer = async ({
   );
 
   await fastify.listen({ port: 3000 });
-  logger.info(`Webserver listening on port ${fastify.server.address().port}`);
+  logger.info(`Webserver listening on port ${(fastify.server.address() as AddressInfo).port}`);
 };
