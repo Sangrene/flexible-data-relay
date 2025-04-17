@@ -66,17 +66,37 @@ export const createAppRoutes = (
         },
       },
     },
-    async function handler(request) {
-      tenantCore.accessGuard(getTenantFromRequest(request), {
-        owner: request.params.tenant,
-      });
+    async function handler(request, reply) {
+      tenantCore
+        .accessGuard(getTenantFromRequest(request), {
+          owner: request.params.tenant,
+        })
+        .mapErr(({ error }) => {
+          if (error === "NO_ACCESS") {
+            return reply.status(403).send({
+              error: error,
+              message: "You don't have permission to access this resource",
+            });
+          }
+        });
 
-      const result = await executeSourceAgainstSchema({
+      const result = executeSourceAgainstSchema({
         source: request.body.query,
         entityCore,
         tenantCore,
         tenant: request.params.tenant,
-      });
+      }).match(
+        (exec) => exec,
+        ({ error }) => {
+          if (error === "TENANT_CACHE_NOT_SET_IN_CORE") {
+            return reply.status(500).send({
+              error: error,
+              message: "Tenant cache is not set in core",
+            });
+          }
+        }
+      );
+
       return result;
     }
   );
@@ -100,8 +120,17 @@ export const createAppRoutes = (
         querystring: {
           type: "object",
           properties: {
-            reconciliationMode: { type: "string", enum: ["override", "merge"], description: "If 'override', will replace existing object. If 'merge', it will merge into it, if it exists." },
-            transient: { type: "boolean", description: "If true, the data won't be stored but simply dispatch to subscribers." },
+            reconciliationMode: {
+              type: "string",
+              enum: ["override", "merge"],
+              description:
+                "If 'override', will replace existing object. If 'merge', it will merge into it, if it exists.",
+            },
+            transient: {
+              type: "boolean",
+              description:
+                "If true, the data won't be stored but simply dispatch to subscribers.",
+            },
           },
         },
         body: {
@@ -135,10 +164,19 @@ export const createAppRoutes = (
         },
       },
     },
-    async function handler(request) {
-      tenantCore.accessGuard(getTenantFromRequest(request), {
-        owner: request.params.tenant,
-      });
+    async function handler(request, reply) {
+      tenantCore
+        .accessGuard(getTenantFromRequest(request), {
+          owner: request.params.tenant,
+        })
+        .mapErr(({ error }) => {
+          if (error === "NO_ACCESS") {
+            return reply.status(403).send({
+              error: error,
+              message: "You don't have permission to access this resource",
+            });
+          }
+        });
       if (Array.isArray(request.body)) {
         const result = await entityCore.createOrUpdateEntityList({
           tenant: request.params.tenant,
@@ -207,16 +245,37 @@ export const createAppRoutes = (
         },
       },
     },
-    async function handler(request) {
+    async function handler(request, reply) {
       const currentTenant = getTenantFromRequest(request);
-      tenantCore.accessGuard(currentTenant, {
-        owner: request.body.subscription.owner,
-      });
-
-      return await tenantCore.createSubscription({
-        subscription: request.body.subscription,
-        tenant: currentTenant,
-      });
+      tenantCore
+        .accessGuard(getTenantFromRequest(request), {
+          owner: request.body.subscription.owner,
+        })
+        .mapErr(({ error }) => {
+          if (error === "NO_ACCESS") {
+            return reply.status(403).send({
+              error: error,
+              message: "You don't have permission to access this resource",
+            });
+          }
+        });
+      return (
+        await tenantCore.createSubscription({
+          subscription: request.body.subscription,
+          tenant: currentTenant,
+        })
+      ).match(
+        (result) => result,
+        ({ error }) => {
+          if (error === "NO_PERMISSION_TO_SUBSCRIBE_TO_THIS_RESOURCE") {
+            return reply.status(403).send({
+              error: error,
+              message:
+                "You don't have permission to subscribe to this resource",
+            });
+          }
+        }
+      );
     }
   );
 };

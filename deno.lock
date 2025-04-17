@@ -12,6 +12,7 @@
     "npm:format-graphql@*": "1.4.0",
     "npm:graphql@*": "16.8.1",
     "npm:mongodb@*": "6.3.0",
+    "npm:neverthrow@^8.2.0": "8.2.0",
     "npm:simple-oauth2@*": "5.0.0",
     "npm:to-json-schema@*": "0.2.5",
     "npm:ts-simple-event-bus@2.0.3": "2.0.3",
@@ -201,6 +202,9 @@
         "micromatch",
         "node-addon-api"
       ]
+    },
+    "@rollup/rollup-linux-x64-gnu@4.40.0": {
+      "integrity": "sha512-RcDGMtqF9EFN8i2RYN2W+64CdHruJ5rPqrlYw+cgM3uOVPSsnAQps7cpjXe9be/yDp8UC7VLoCoKC8J3Kn2FkQ=="
     },
     "@sideway/address@4.1.4": {
       "integrity": "sha512-7vwq+rOHVWjyXxVlR76Agnvhy8I9rpzjosTESvmhNeXOXdZZB15Fl+TI9x1SiHZH5Jv2wTGduSxFDIaq0m3DUw==",
@@ -913,6 +917,12 @@
     "napi-wasm@1.1.0": {
       "integrity": "sha512-lHwIAJbmLSjF9VDRm9GoVOy9AGp3aIvkjv+Kvz9h16QR3uSVYH78PNQUnT2U4X53mhlnV2M7wrhibQ3GHicDmg=="
     },
+    "neverthrow@8.2.0": {
+      "integrity": "sha512-kOCT/1MCPAxY5iUV3wytNFUMUolzuwd/VF/1KCx7kf6CutrOsTie+84zTGTpgQycjvfLdBBdvBvFLqFD2c0wkQ==",
+      "dependencies": [
+        "@rollup/rollup-linux-x64-gnu"
+      ]
+    },
     "node-addon-api@7.1.0": {
       "integrity": "sha512-mNcltoe1R8o7STTegSOHdnJNN7s5EUvhoS7ShnTHDyOSd+8H+UdWODq6qSv67PjC8Zc5JRT8+oLAMCr0SIXw7g=="
     },
@@ -1531,6 +1541,7 @@
     "https://deno.land/x/amqp@v0.23.1/src/amqp_connect_options.ts": "9bc876cd538e14b9839451e62f7a0eff509ec7d6417c980acc5acf7af567e63f",
     "https://deno.land/x/amqp@v0.23.1/src/amqp_connection.ts": "af5a0583885cf22a6308df76830c6b17d2cba352c8a03672dc9fad56b799336c",
     "https://deno.land/x/amqp@v0.23.1/src/amqp_constants.ts": "2a1b2c95a27fac8d4179ac3418b6ed92d77e133d77b7733848f6b100a066d3ca",
+    "https://deno.land/x/amqp@v0.23.1/src/amqp_frame.ts": "6d78c6e9d4542070b3a03b3510fc80cce414715c9fedbdfc6525be365454cb59",
     "https://deno.land/x/amqp@v0.23.1/src/amqp_frame_reader.ts": "89e0fc54cef94fd35aa6bc39d638cf21a663c0a959afde8a2bd362dbbfcd209c",
     "https://deno.land/x/amqp@v0.23.1/src/amqp_multiplexer.ts": "26fc8989299b44da9012fb4ac769ae9f88ba692bca7d9a0dff3d075641ca65d8",
     "https://deno.land/x/amqp@v0.23.1/src/amqp_socket.ts": "e4f1a54d13f0252097b3075dc6cf2de1efe303fdabbdfdeea9ecec7994beccc1",
@@ -1650,6 +1661,7 @@
       "npm:fastify@*",
       "npm:graphql@*",
       "npm:mongodb@*",
+      "npm:neverthrow@^8.2.0",
       "npm:to-json-schema@*",
       "npm:ts-simple-event-bus@2.0.5",
       "npm:unstorage@*",

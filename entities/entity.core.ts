@@ -5,6 +5,7 @@ import isEqual from "https://deno.land/x/lodash@4.17.4-es/isEqual.js";
 import deepMerge from "deepmerge";
 import { TenantsCache } from "../graphql/graphqlSchemasCache.ts";
 import { JSONSchema7 } from "../json-schema/jsonSchemaTypes.ts";
+import { err, ok, Result } from "neverthrow";
 
 interface EntityCoreArgs {
   persistence: EntityRepository;
@@ -62,11 +63,13 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
       schemaReconciliationMode?: "merge" | "override";
       transient?: boolean;
     };
-  }) => {
-    if (!entity.id)
-      throw new Error(
-        "Entity should have an 'id' field that serves as identifier"
-      );
+  }): Promise<
+    Result<any & { id: string }, { error: "MISSING_ID_ON_ENTITY" }>
+  > => {
+    if (!entity.id) {
+      return err({ error: "MISSING_ID_ON_ENTITY" });
+    }
+
     const entitySchema = {
       ...jsonToJsonSchema(entity),
       title: entityName,
@@ -87,7 +90,7 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
       schemaReconciliationMode: options.schemaReconciliationMode,
     });
     eventBus.publish({ queue: `entity.${action}`, message: { entity } });
-    return entity;
+    return ok(entity);
   };
 
   const getEntitySchema = (entityName: string, tenant: string) => {

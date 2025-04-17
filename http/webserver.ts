@@ -8,6 +8,7 @@ import fastifySwaggerUIPlugin from "@fastify/swagger-ui";
 import { createAppRoutes } from "./appRoutes.ts";
 import { createAdminRoutes } from "./adminRoutes.ts";
 import { logger } from "../logging/logger.ts";
+import { AddressInfo } from "node:net";
 
 type RequestWithTenant = FastifyRequest & { tenant?: Tenant };
 
@@ -101,13 +102,31 @@ export const runWebServer = async ({
         },
       },
     },
-    async (req) => {
-      return {
-        Bearer: await authCore.generateTokenFromCredentials({
+    async (req, rep) => {
+      return (
+        await authCore.generateTokenFromCredentials({
           clientId: req.body.clientId,
           clientSecret: req.body.clientSecret,
-        }),
-      };
+        })
+      ).match(
+        (token) => {
+          return { Bearer: token };
+        },
+        ({ error }) => {
+          if (error === "NO_TENANT_WITH_THIS_ID") {
+            return rep.status(404).send({
+              error: "NO_TENANT_WITH_THIS_ID",
+              message: "No tenant with this id",
+            });
+          }
+          if (error === "BAD_CREDENTIALS") {
+            return rep.status(401).send({
+              error: "BAD_CREDENTIALS",
+              message: "Bad credentials",
+            });
+          }
+        }
+      );
     }
   );
 
@@ -124,7 +143,11 @@ export const runWebServer = async ({
   await fastify.register(
     async (fastify, _, done) => {
       fastify.addHook("preHandler", async (req: RequestWithTenant) => {
-        const tenant = await authCore.getTenantFromToken(req.headers.bearer);
+        const bearer = req.headers.bearer;
+        if (typeof bearer !== "string") {
+          throw new Error("Bearer token format error");
+        }
+        const tenant = await authCore.getTenantFromToken(bearer);
         if (!tenant) throw new Error("No tenant");
         req.tenant = tenant;
       });
@@ -141,5 +164,5 @@ export const runWebServer = async ({
   );
 
   await fastify.listen({ port: 3000 });
-  logger.info(`Webserver listening on port ${fastify.server.address().port}`);
+  logger.info(`Webserver listening on port ${(fastify.server.address() as AddressInfo).port}`);
 };

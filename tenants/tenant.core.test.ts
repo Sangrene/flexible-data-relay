@@ -1,11 +1,11 @@
-import {
-  assertEquals,
-  assertThrows,
-} from "https://deno.land/std@0.212.0/assert/mod.ts";
+import { assertEquals } from "https://deno.land/std@0.212.0/assert/mod.ts";
 
 import { createTenantCore } from "./tenant.core.ts";
 import { createTenantInMemoryRepository } from "./tenantsInMemoryRepository.ts";
-import { createTenantCache } from "../graphql/graphqlSchemasCache.ts";
+import {
+  createLocalSchemaChangeHandler,
+  createTenantCache,
+} from "../graphql/graphqlSchemasCache.ts";
 import { createEntityInMemoryRepository } from "../entities/entitiesinMemoryRepository.ts";
 import { createEntityCore } from "../entities/entity.core.ts";
 import {
@@ -27,7 +27,7 @@ Deno.test(async function createTenantWithRightSchema() {
   });
   const cache = createTenantCache({
     initContent: await tenantCore.getAllSchemas(entityCore),
-    mode: "local",
+    createSchemaChangeHandler: createLocalSchemaChangeHandler(),
   });
   tenantCore.setCache(cache);
   entityCore.setCache(cache);
@@ -47,13 +47,16 @@ Deno.test(async function canTenantHaveAccessToHisOwnResource() {
   });
   const cache = createTenantCache({
     initContent: await tenantCore.getAllSchemas(entityCore),
-    mode: "local",
+    createSchemaChangeHandler: createLocalSchemaChangeHandler(),
   });
   tenantCore.setCache(cache);
   entityCore.setCache(cache);
 
   const tenant = await tenantCore.createTenant("tenant");
-  assertEquals(tenantCore.accessGuard(tenant, { owner: "tenant" }), true);
+  assertEquals(
+    tenantCore.accessGuard(tenant, { owner: "tenant" })._unsafeUnwrap(),
+    true
+  );
 });
 
 Deno.test(
@@ -67,13 +70,14 @@ Deno.test(
     });
     const cache = createTenantCache({
       initContent: await tenantCore.getAllSchemas(entityCore),
-      mode: "local",
+      createSchemaChangeHandler: createLocalSchemaChangeHandler(),
     });
     tenantCore.setCache(cache);
     entityCore.setCache(cache);
 
     const tenant = await tenantCore.createTenant("tenant");
-    assertThrows(() => tenantCore.accessGuard(tenant, { owner: "" }), Error);
+    const guardResult = tenantCore.accessGuard(tenant, { owner: "" });
+    assertEquals(guardResult.isErr(), true);
   }
 );
 
@@ -82,13 +86,12 @@ Deno.test(
     const tenantPersistence = createTenantInMemoryRepository();
     const entityPersistence = createEntityInMemoryRepository();
     const entityCore = createEntityCore({ persistence: entityPersistence });
-
     const tenantCore = createTenantCore({
       tenantPersistenceHandler: tenantPersistence,
     });
     const cache = createTenantCache({
       initContent: await tenantCore.getAllSchemas(entityCore),
-      mode: "local",
+      createSchemaChangeHandler: createLocalSchemaChangeHandler(),
     });
     tenantCore.setCache(cache);
     entityCore.setCache(cache);
@@ -100,7 +103,10 @@ Deno.test(
       allowedTenantName: "tenant2",
     });
     const tenant2 = await tenantPersistence.getTenantByName("tenant2");
-    assertEquals(tenantCore.accessGuard(tenant2!, { owner: "tenant1" }), true);
+    assertEquals(
+      tenantCore.accessGuard(tenant2!, { owner: "tenant1" })._unsafeUnwrap(),
+      true
+    );
   }
 );
 
@@ -120,7 +126,7 @@ Deno.test(async function sendWebhookRequestIfSubscribedAndEntityIsUpdated() {
   });
   const cache = createTenantCache({
     initContent: await tenantCore.getAllSchemas(entityCore),
-    mode: "local",
+    createSchemaChangeHandler: createLocalSchemaChangeHandler(),
   });
   tenantCore.setCache(cache);
   entityCore.setCache(cache);
@@ -139,16 +145,18 @@ Deno.test(async function sendWebhookRequestIfSubscribedAndEntityIsUpdated() {
     allowedTenantName: "tenant2",
   });
 
-  const subscription = await tenantCore.createSubscription({
-    subscription: {
-      owner: "tenant1",
-      entityName: "entityTest",
-      webhook: {
-        url: "https://localhost:3000/test",
+  const subscription = (
+    await tenantCore.createSubscription({
+      subscription: {
+        owner: "tenant1",
+        entityName: "entityTest",
+        webhook: {
+          url: "https://localhost:3000/test",
+        },
       },
-    },
-    tenant: tenant2,
-  });
+      tenant: tenant2,
+    })
+  )._unsafeUnwrap();
 
   await entityCore.createOrUpdateEntity({
     entity: { name: "test", id: "id" },

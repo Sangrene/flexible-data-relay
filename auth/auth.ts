@@ -1,3 +1,4 @@
+import { err, ok, Result } from "neverthrow";
 import { Env } from "../env/loadEnv.ts";
 import { TenantCore } from "../tenants/tenant.core.ts";
 import createJwtService from "./jwtService.ts";
@@ -13,7 +14,7 @@ class WrongCredentialsError extends Error {
   }
 }
 
-export const createAuthCore = async ({ tenantCore,env }: AuthServerProps) => {
+export const createAuthCore = async ({ tenantCore, env }: AuthServerProps) => {
   const jwtService = await createJwtService(env);
   const generateTokenFromCredentials = async ({
     clientId,
@@ -21,12 +22,18 @@ export const createAuthCore = async ({ tenantCore,env }: AuthServerProps) => {
   }: {
     clientId: string;
     clientSecret: string;
-  }) => {
+  }): Promise<
+    Result<string, { error: "NO_TENANT_WITH_THIS_ID" | "BAD_CREDENTIALS" }>
+  > => {
     const tenant = await tenantCore.getTenantById(clientId);
-    if (!tenant) throw new Error("No tenant with this id");
-    if (tenant.lastSecret !== clientSecret) throw new WrongCredentialsError();
+    if (!tenant) {
+      return err({ error: "NO_TENANT_WITH_THIS_ID" });
+    }
+    if (tenant.lastSecret !== clientSecret) {
+      return err({ error: "BAD_CREDENTIALS" });
+    }
     const token = await jwtService.createJWT({ tenantId: tenant._id });
-    return token;
+    return ok(token);
   };
 
   const getTenantFromToken = async (token: string) => {

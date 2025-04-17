@@ -1,15 +1,22 @@
 import { connect } from "https://deno.land/x/amqp/mod.ts";
 import { SubscriptionPlugin } from "./subscriptionManager.ts";
 import { logger } from "../logging/logger.ts";
+import { Env } from "../env/loadEnv.ts";
 
 export const createAMQPSubscriptionPlugin = async ({
-  connectionString,
+  env,
 }: {
-  connectionString: string;
+  env: Env;
 }): Promise<SubscriptionPlugin> => {
-  const connection = await connect(connectionString);
+  if (!env.RABBIT_MQ_CONNECTION_STRING) {
+    logger.error("RabbitMQ connection string is not provided.");
+    return {
+      publishMessage: async () => {},
+    };
+  }
+  const connection = await connect(env.RABBIT_MQ_CONNECTION_STRING);
   const channel = await connection.openChannel();
-  logger.info("Connected to provided RabbitMQ instance.")
+  logger.info("Connected to provided RabbitMQ instance.");
   return {
     publishMessage: async ({ action, entity, subscription }) => {
       if (subscription.queue) {
