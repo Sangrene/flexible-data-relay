@@ -2,7 +2,7 @@ import { GraphQLSchema } from "graphql";
 import { EntityCore } from "../entities/entity.core.ts";
 import { TenantsCache } from "../graphql/graphqlSchemasCache.ts";
 import { createGraphqlSchemaFromEntitiesSchema } from "../graphql/jsonToGraphql.ts";
-import { Subscription, Tenant } from "./tenant.model.ts";
+import { Access, Subscription, Tenant } from "./tenant.model.ts";
 import { TenantRepository } from "./tenant.persistence.ts";
 import {
   createHash,
@@ -21,23 +21,36 @@ export const createTenantCore = ({
   const getTenantGraphqlSchema = ({
     tenant,
     entityCore,
+    tenantRequestingAccess,
   }: {
     tenant: string;
+    tenantRequestingAccess: Tenant;
     entityCore: EntityCore;
-  }): Result<GraphQLSchema, { error: "TENANT_CACHE_NOT_SET_IN_CORE" }> => {
+  }) => {
     if (!tenantsCache) {
-      return err({ error: "TENANT_CACHE_NOT_SET_IN_CORE" });
+      throw new Error("CACHE_NOT_SET_IN_TENANT_CORE");
     }
+    const requestTenantAllowedEntities =
+      tenantRequestingAccess.accessAllowed.filter(
+        (item) => item.owner === tenant
+      );
     const val = tenantsCache.getTenantCache(tenant);
     const graphqlSchema = createGraphqlSchemaFromEntitiesSchema(
       tenant,
-      val.entities?.map((entity) => ({
+      (tenant === tenantRequestingAccess.name
+        ? val.entities
+        : val.entities?.filter((entity) =>
+            requestTenantAllowedEntities.some(
+              (item) => item.entityName === entity.title
+            )
+          )
+      )?.map((entity) => ({
         name: entity.title || "",
         schema: entity,
       })) || [],
       entityCore
     );
-    return ok(graphqlSchema);
+    return graphqlSchema;
   };
 
   const createTenant = async (tenantName: string) => {
@@ -60,14 +73,17 @@ export const createTenantCore = ({
   const allowTenantAccessToOwnResource = async ({
     currentTenantName,
     allowedTenantName,
+    entityName,
   }: {
     allowedTenantName: string;
     currentTenantName: string;
+    entityName: string;
   }) => {
     return await tenantPersistenceHandler.addAllowedAccessToTenant(
       allowedTenantName,
       {
         owner: currentTenantName,
+        entityName,
       }
     );
   };
@@ -98,10 +114,13 @@ export const createTenantCore = ({
 
   const accessGuard = (
     tenant: Tenant,
-    { owner }: { owner: string }
+    access: Access
   ): Result<true, { error: "NO_ACCESS" }> => {
-    if (tenant.name === owner) return ok(true);
-    const hasAccess = tenant.accessAllowed.some((item) => item.owner === owner);
+    if (tenant.name === access.owner) return ok(true);
+    const hasAccess = tenant.accessAllowed.some(
+      (item) =>
+        item.owner === access.owner && item.entityName === access.entityName
+    );
     if (!hasAccess) {
       return err({ error: "NO_ACCESS" });
     }
