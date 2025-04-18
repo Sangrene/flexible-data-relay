@@ -5,7 +5,7 @@ export const createTenantInMemoryRepository = (): TenantRepository => {
   const inMemoryStore: Tenant[] = [];
   const getTenantById = async (id: string) => {
     const tenant = inMemoryStore.find((tenant) => tenant._id === id);
-    if (!tenant) throw new Error(`No tenant associated with id ${id}`);
+    if (!tenant) return null;
     return tenant;
   };
   const createTenant = async (tenant: Omit<Tenant, "_id">) => {

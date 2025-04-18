@@ -1,7 +1,7 @@
-type Permission = "read";
 
 export interface Access {
   owner: string;
+  entityName: string;
 }
 
 export interface Subscription {

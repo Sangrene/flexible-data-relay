@@ -130,10 +130,34 @@ export const runWebServer = async ({
     }
   );
 
-  fastify.post<{ Body: { secret: string } }>("/admin-token", async (req) => {
-    return await authCore.generateAdminTokenFromSecret(req.body.secret);
-  });
-
+  fastify.post<{ Body: { secret: string } }>(
+    "/admin-token",
+    {
+      schema: {
+        description: "Generate an admin token that expires in 30 days",
+        tags: ["admin"],
+        summary: "Generate an admin token",
+        body: {
+          type: "object",
+          properties: {
+            secret: { type: "string" },
+          },
+        },
+      },
+    },
+    async (req, rep) => {
+      return (
+        await authCore.generateAdminTokenFromSecret(req.body.secret)
+      ).match(
+        (token) => {
+          return { Bearer: token };
+        },
+        ({ error }) => {
+          return rep.status(401).send({ error: error });
+        }
+      );
+    }
+  );
   await createAdminRoutes(fastify, {
     authCore,
     entityCore,
@@ -147,9 +171,12 @@ export const runWebServer = async ({
         if (typeof bearer !== "string") {
           throw new Error("Bearer token format error");
         }
-        const tenant = await authCore.getTenantFromToken(bearer);
-        if (!tenant) throw new Error("No tenant");
-        req.tenant = tenant;
+        const result = await authCore.getTenantFromToken(bearer);
+        if (result.isErr()) {
+          throw new Error(result.error.error);
+        } else {
+          req.tenant = result.value;
+        }
       });
 
       createAppRoutes(fastify, {
@@ -164,5 +191,9 @@ export const runWebServer = async ({
   );
 
   await fastify.listen({ port: 3000 });
-  logger.info(`Webserver listening on port ${(fastify.server.address() as AddressInfo).port}`);
+  logger.info(
+    `Webserver listening on port ${
+      (fastify.server.address() as AddressInfo).port
+    }`
+  );
 };
