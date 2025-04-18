@@ -9,12 +9,6 @@ interface AuthServerProps {
   env: Env;
 }
 
-class WrongCredentialsError extends Error {
-  constructor() {
-    super("Unable to validate credentials");
-  }
-}
-
 export const createAuthCore = async ({ tenantCore, env }: AuthServerProps) => {
   const jwtService = await createJwtService(env);
   const generateTokenFromCredentials = async ({
@@ -61,10 +55,12 @@ export const createAuthCore = async ({ tenantCore, env }: AuthServerProps) => {
     return ok(token);
   };
 
-  const getAdminFromToken = async (token: string) => {
+  const getAdminFromToken = async (
+    token: string
+  ): Promise<Result<boolean, { error: "BAD_CREDENTIALS" }>> => {
     const { admin } = await jwtService.verifyJWT(token);
-    if (!admin) throw new WrongCredentialsError();
-    return true;
+    if (!admin) return err({ error: "BAD_CREDENTIALS" });
+    return ok(true);
   };
 
   return {

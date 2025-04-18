@@ -130,3 +130,37 @@ Deno.test(async function returnErrorIfGenerateAdminTokenWithNoAdminSecret() {
   const token = await authCore.generateAdminTokenFromSecret("admin");
   assertEquals(token._unsafeUnwrapErr(), { error: "NO_ADMIN_SECRET_DEFINED" });
 });
+
+Deno.test(async function canGetAdminFromToken() {
+  const tenantPersistence = createTenantInMemoryRepository();
+  const tenantCore = createTenantCore({
+    tenantPersistenceHandler: tenantPersistence,
+  });
+  const authCore = await createAuthCore({
+    tenantCore,
+    env: { ...loadEnv(), ADMIN_SECRET: "admin" },
+  });
+  const token = await authCore.generateAdminTokenFromSecret("admin");
+  assertEquals(token.isOk(), true);
+  const admin = await authCore.getAdminFromToken(token._unsafeUnwrap());
+  assertEquals(admin.isOk(), true);
+});
+
+Deno.test(async function notAdminTokenIsNotAdmin() {
+  const tenantPersistence = createTenantInMemoryRepository();
+  const tenantCore = createTenantCore({
+    tenantPersistenceHandler: tenantPersistence,
+  });
+  const authCore = await createAuthCore({
+    tenantCore,
+    env: { ...loadEnv(), ADMIN_SECRET: "admin" },
+  });
+  const newTenant = await tenantCore.createTenant("tenant");
+  const token = await authCore.generateTokenFromCredentials({
+    clientId: newTenant._id,
+    clientSecret: newTenant.lastSecret,
+  });
+  assertEquals(token.isOk(), true);
+  const admin = await authCore.getAdminFromToken(token._unsafeUnwrap());
+  assertEquals(admin._unsafeUnwrapErr(), { error: "BAD_CREDENTIALS" });
+});
