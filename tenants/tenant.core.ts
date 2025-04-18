@@ -1,4 +1,3 @@
-import { GraphQLSchema } from "graphql";
 import { EntityCore } from "../entities/entity.core.ts";
 import { TenantsCache } from "../graphql/graphqlSchemasCache.ts";
 import { createGraphqlSchemaFromEntitiesSchema } from "../graphql/jsonToGraphql.ts";

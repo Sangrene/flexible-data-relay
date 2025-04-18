@@ -254,7 +254,7 @@ Deno.test(async function schemaIsFilteredIfTenantHasAccessToAnotherTenantResourc
   });
   tenantCore.setCache(cache);
   entityCore.setCache(cache);
-  const tenant = await tenantCore.createTenant("tenant");
+  await tenantCore.createTenant("tenant");
   const tenant2 = await tenantCore.createTenant("tenant2");
 
   await entityCore.createOrUpdateEntity({

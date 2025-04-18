@@ -68,24 +68,14 @@ export const createAppRoutes = (
         },
       },
     },
-    async function handler(request, reply) {
+    async function handler(request) {
       const result = executeSourceAgainstSchema({
         source: request.body.query,
         entityCore,
         tenantCore,
         tenant: request.params.tenant,
         tenantRequestingAccess: getTenantFromRequest(request),
-      }).match(
-        (exec) => exec,
-        ({ error }) => {
-          if (error === "TENANT_CACHE_NOT_SET_IN_CORE") {
-            return reply.status(500).send({
-              error: error,
-              message: "Tenant cache is not set in core",
-            });
-          }
-        }
-      );
+      });
 
       return result;
     }
@@ -158,6 +148,7 @@ export const createAppRoutes = (
       tenantCore
         .accessGuard(getTenantFromRequest(request), {
           owner: request.params.tenant,
+          entityName: request.params.entity,
         })
         .mapErr(({ error }) => {
           if (error === "NO_ACCESS") {
