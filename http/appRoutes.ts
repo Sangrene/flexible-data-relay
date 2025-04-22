@@ -7,17 +7,18 @@ export const createAppRoutes = (
   fastify: FastifyInstance,
   { entityCore, tenantCore }: WebServerProps
 ) => {
-  fastify.post<{ Body: { tenantName: string } }>(
+  fastify.post<{ Body: { tenantName: string; entityName: string } }>(
     "/allow-access",
     {
       schema: {
-        description: "Allow access to your entities to another tenant",
+        description: "Allow access to one of your entity to another tenant",
         tags: ["tenant"],
-        summary: "Allow access to own entities",
+        summary: "Allow access to an entity",
         body: {
           type: "object",
           properties: {
             tenantName: { type: "string" },
+            entityName: { type: "string" },
           },
         },
         headers: {
@@ -38,6 +39,7 @@ export const createAppRoutes = (
       return await tenantCore.allowTenantAccessToOwnResource({
         currentTenantName: getTenantFromRequest(req).name,
         allowedTenantName: req.body.tenantName,
+        entityName: req.body.entityName,
       });
     }
   );
@@ -66,36 +68,14 @@ export const createAppRoutes = (
         },
       },
     },
-    async function handler(request, reply) {
-      tenantCore
-        .accessGuard(getTenantFromRequest(request), {
-          owner: request.params.tenant,
-        })
-        .mapErr(({ error }) => {
-          if (error === "NO_ACCESS") {
-            return reply.status(403).send({
-              error: error,
-              message: "You don't have permission to access this resource",
-            });
-          }
-        });
-
+    async function handler(request) {
       const result = executeSourceAgainstSchema({
         source: request.body.query,
         entityCore,
         tenantCore,
         tenant: request.params.tenant,
-      }).match(
-        (exec) => exec,
-        ({ error }) => {
-          if (error === "TENANT_CACHE_NOT_SET_IN_CORE") {
-            return reply.status(500).send({
-              error: error,
-              message: "Tenant cache is not set in core",
-            });
-          }
-        }
-      );
+        tenantRequestingAccess: getTenantFromRequest(request),
+      });
 
       return result;
     }
@@ -168,6 +148,7 @@ export const createAppRoutes = (
       tenantCore
         .accessGuard(getTenantFromRequest(request), {
           owner: request.params.tenant,
+          entityName: request.params.entity,
         })
         .mapErr(({ error }) => {
           if (error === "NO_ACCESS") {
@@ -210,7 +191,7 @@ export const createAppRoutes = (
     {
       schema: {
         description:
-          "Create a subscription to a tenant entities update or creation",
+          "Create a subscription to a tenant entity update or creation",
         tags: ["entity"],
         summary: "Create subscription",
         body: {
@@ -250,6 +231,7 @@ export const createAppRoutes = (
       tenantCore
         .accessGuard(getTenantFromRequest(request), {
           owner: request.body.subscription.owner,
+          entityName: request.body.subscription.entityName,
         })
         .mapErr(({ error }) => {
           if (error === "NO_ACCESS") {
