@@ -6,13 +6,14 @@ import {
   createLocalSchemaChangeHandler,
   createTenantCache,
 } from "../graphql/graphqlSchemasCache.ts";
-import {
-  assertSpyCall,
-  spy,
-} from "https://deno.land/std@0.212.0/testing/mock.ts";
+import { assertSpyCall, spy } from "jsr:@std/testing/mock";
+import { FakeTime } from "jsr:@std/testing/time";
+import { JSONSchema7 } from "../json-schema/jsonSchemaTypes.ts";
+
 
 Deno.test(async function createsEntityIfItDoesntExistYet() {
-  const ENTITY = { id: "id", a: 2, b: "truc" };
+  using time = new FakeTime();
+  const ENTITY = { id: "id", data: { id: "id", a: 2, b: "truc" } };
   const persistence = createEntityInMemoryRepository();
   const store = createTenantCache({
     createSchemaChangeHandler: createLocalSchemaChangeHandler(),
@@ -29,12 +30,17 @@ Deno.test(async function createsEntityIfItDoesntExistYet() {
     entityName: "testEntity",
     id: "id",
   });
-  assertEquals(entity, ENTITY);
+  assertEquals(entity, {
+    ...ENTITY,
+    createdAt: new Date(time.now),
+    updatedAt: new Date(time.now),
+  });
 });
 
 Deno.test(async function updateEntityIfItAlreadyExists() {
-  const ENTITY = { id: "id", a: 2, b: "truc" };
-  const UPDATED_ENTITY = { id: "id", a: 2, b: "trac" };
+  using time = new FakeTime();
+  const ENTITY = { id: "id", data: { id: "id", a: 2, b: "truc" } };
+  const UPDATED_ENTITY = { id: "id", data: { id: "id", a: 2, b: "trac" } };
   const persistence = createEntityInMemoryRepository();
   const store = createTenantCache({
     createSchemaChangeHandler: createLocalSchemaChangeHandler(),
@@ -56,11 +62,15 @@ Deno.test(async function updateEntityIfItAlreadyExists() {
     entityName: "testEntity",
     id: "id",
   });
-  assertEquals(entity, UPDATED_ENTITY);
+  assertEquals(entity, {
+    ...UPDATED_ENTITY,
+    createdAt: new Date(time.now),
+    updatedAt: new Date(time.now),
+  });
 });
 
 Deno.test(async function storeEntitySchemaOnCreateEntity() {
-  const ENTITY = { id: "id", a: 2, b: "truc" };
+  const ENTITY = { id: "id", data: { id: "id", a: 2, b: "truc" } };
   const persistence = createEntityInMemoryRepository();
   const store = createTenantCache({
     createSchemaChangeHandler: createLocalSchemaChangeHandler(),
@@ -74,14 +84,17 @@ Deno.test(async function storeEntitySchemaOnCreateEntity() {
   });
 
   const computedSchema = { ...jsonToJsonSchema(ENTITY), title: "testEntity" };
-  const existingSchema = await core.getEntitySchema("testEntity", "");
+  const existingSchema = core.getEntitySchema("testEntity", "");
   assertEquals(computedSchema, existingSchema);
 });
 
 Deno.test(
   async function updateSchemaIfAddingNewEntityWithDifferentProperties() {
-    const ENTITY = { id: "id", a: 2, b: "truc" };
-    const OTHER_ENTITY = { id: "id2", a: 2, b: "truc", c: true };
+    const ENTITY = { id: "id", data: { id: "id", a: 2, b: "truc" } };
+    const OTHER_ENTITY = {
+      id: "id2",
+      data: { id: "id2", a: 2, b: "truc", c: true },
+    };
     const persistence = createEntityInMemoryRepository();
     const store = createTenantCache({
       createSchemaChangeHandler: createLocalSchemaChangeHandler(),
@@ -109,8 +122,11 @@ Deno.test(
 
 Deno.test(
   async function updateSchemaIfAddingNewEntityWithDifferentPropertiesAndMergeOption() {
-    const ENTITY = { id: "id", a: 2, b: "truc", d: false };
-    const OTHER_ENTITY = { id: "id2", a: "truc", b: "truc", c: true };
+    const ENTITY = { id: "id", data: { a: 2, b: "truc", d: false } };
+    const OTHER_ENTITY = {
+      id: "id2",
+      data: { a: "truc", b: "truc", c: true },
+    };
     const persistence = createEntityInMemoryRepository();
     const store = createTenantCache({
       createSchemaChangeHandler: createLocalSchemaChangeHandler(),
@@ -130,17 +146,40 @@ Deno.test(
         schemaReconciliationMode: "merge",
       },
     });
-    const computedSchema = {
-      ...jsonToJsonSchema({ ...ENTITY, ...OTHER_ENTITY }),
-      title: "testEntity",
+    const computedSchema: JSONSchema7 = {
+        properties: {
+          data: {
+            properties: {
+              a: {
+                type: "string",
+              },
+              b: {
+                type: "string",
+              },
+              c: {
+                type: "boolean",
+              },
+             d: {
+               type: "boolean",
+            },
+            },
+            type: "object",
+          },
+          id: {
+            type: "string",
+          },
+        },
+        title: "testEntity",
+        type: "object",
+      
     };
     const existingSchema = core.getEntitySchema("testEntity", "");
-    assertEquals(computedSchema, existingSchema);
+    assertEquals(existingSchema, computedSchema);
   }
 );
 
 Deno.test(async function returnsErrorIfEntityCreatedOrUpdatedDoesntHaveId() {
-  const ENTITY = { a: 2, b: "truc" };
+  const ENTITY = { data: { a: 2, b: "truc" } };
   const persistence = createEntityInMemoryRepository();
   const store = createTenantCache({
     createSchemaChangeHandler: createLocalSchemaChangeHandler(),
@@ -149,6 +188,7 @@ Deno.test(async function returnsErrorIfEntityCreatedOrUpdatedDoesntHaveId() {
   core.setCache(store);
   const result = await core.createOrUpdateEntity({
     entityName: "testEntity",
+    // @ts-expect-error We miss the id so this is expected
     entity: ENTITY,
     tenant: "",
   });
@@ -157,7 +197,7 @@ Deno.test(async function returnsErrorIfEntityCreatedOrUpdatedDoesntHaveId() {
 
 Deno.test(
   async function doesntUpdateSchemaOrStoreInRepositoryIfAddingEntityWithTransientOption() {
-    const ENTITY = { id: "id", a: 2, b: "truc", d: false };
+    const ENTITY = { id: "id", data: { a: 2, b: "truc", d: false } };
     const persistence = createEntityInMemoryRepository();
     const store = createTenantCache({
       createSchemaChangeHandler: createLocalSchemaChangeHandler(),
@@ -176,8 +216,8 @@ Deno.test(
 );
 
 Deno.test(async function canAddMultipleEntitiesAtTheSameTime() {
-  const ENTITY = { id: "id", a: 2, b: "truc", d: false };
-  const OTHER_ENTITY = { id: "id2", a: "truc", b: "truc", c: true };
+  const ENTITY = { id: "id", data: { a: 2, b: "truc", d: false } };
+  const OTHER_ENTITY = { id: "id2", data: { a: "truc", b: "truc", c: true } };
   const persistence = createEntityInMemoryRepository();
   const store = createTenantCache({
     createSchemaChangeHandler: createLocalSchemaChangeHandler(),
@@ -195,10 +235,15 @@ Deno.test(async function canAddMultipleEntitiesAtTheSameTime() {
     type: "object",
     properties: {
       id: { type: "string" },
-      a: { type: "string" },
-      b: { type: "string" },
-      d: { type: "boolean" },
-      c: { type: "boolean" },
+      data: {
+        type: "object",
+        properties: {
+          a: { type: "string" },
+          b: { type: "string" },
+          d: { type: "boolean" },
+          c: { type: "boolean" },
+        },
+      },
     },
   });
   assertEquals(
