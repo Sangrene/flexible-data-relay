@@ -195,7 +195,7 @@ Deno.test(async function sendWebhookRequestIfSubscribedAndEntityIsUpdated() {
   )._unsafeUnwrap();
 
   await entityCore.createOrUpdateEntity({
-    entity: { name: "test", id: "id" },
+    entity: { id: "id", data: { id: "id", name: "test" } },
     entityName: "entityTest",
     tenant: "tenant1",
   });
@@ -205,7 +205,7 @@ Deno.test(async function sendWebhookRequestIfSubscribedAndEntityIsUpdated() {
       {
         subscription,
         action: "created",
-        entity: { name: "test", id: "id" },
+        entity: { id: "id", data: { id: "id", name: "test" } },
       },
     ],
   });
@@ -226,7 +226,7 @@ Deno.test(async function tenantCanQueryHisOwnEntity() {
   entityCore.setCache(cache);
   const tenant = await tenantCore.createTenant("tenant");
   await entityCore.createOrUpdateEntity({
-    entity: { name: "test", id: "id" },
+    entity: { id: "id", data: { id: "id", name: "test" } },
     entityName: "entityTest",
     tenant: "tenant",
   });
@@ -258,12 +258,12 @@ Deno.test(async function schemaIsFilteredIfTenantHasAccessToAnotherTenantResourc
   const tenant2 = await tenantCore.createTenant("tenant2");
 
   await entityCore.createOrUpdateEntity({
-    entity: { name: "test", id: "id" },
+    entity: { id: "id", data: { id: "id", name: "test" } },
     entityName: "entityTest",
     tenant: "tenant",
   });
   await entityCore.createOrUpdateEntity({
-    entity: { name: "test2", id: "id2" },
+    entity: { id: "id2", data: { id: "id2", name: "test2" } },
     entityName: "entityTest2",
     tenant: "tenant",
   });

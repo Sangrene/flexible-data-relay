@@ -88,8 +88,8 @@ export const createAppRoutes = (
       transient: boolean;
     };
     Body:
-      | Array<Record<string, any> & { id: string }>
-      | (Record<string, any> & { id: string });
+      | Array<{ id: string; data: Record<string, any> }>
+      | { id: string; data: Record<string, any> };
   }>(
     "/:tenant/entity/:entity",
     {
@@ -119,6 +119,7 @@ export const createAppRoutes = (
               type: "object",
               properties: {
                 id: { type: "string" },
+                data: { type: "object" },
               },
             },
             {
@@ -127,6 +128,7 @@ export const createAppRoutes = (
                 type: "object",
                 properties: {
                   id: { type: "string" },
+                  data: { type: "object" },
                 },
               },
             },

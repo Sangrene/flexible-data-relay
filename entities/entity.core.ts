@@ -1,6 +1,6 @@
 import { eventBus } from "../event/eventBus.ts";
 import { jsonToJsonSchema } from "../json-schema/jsonToJsonSchema.ts";
-import { EntityRepository } from "./entities.persistence.ts";
+import { EntityRepository, Entity } from "./entities.persistence.ts";
 import isEqual from "https://deno.land/x/lodash@4.17.4-es/isEqual.js";
 import deepMerge from "deepmerge";
 import { TenantsCache } from "../graphql/graphqlSchemasCache.ts";
@@ -33,7 +33,19 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
 
     if (!isEqual(schema, existingSchema)) {
       if (schemaReconciliationMode === "merge" && existingSchema) {
-        schema = deepMerge(existingSchema, schema);
+        console.log(existingSchema);
+        console.log(schema);
+        schema = {
+          ...schema,
+          properties: {
+            ...existingSchema.properties,
+            data: deepMerge(
+              existingSchema.properties?.["data"] || {},
+              schema.properties?.["data"] || {}
+            ),
+          },
+        };
+        console.log(schema);
       }
       persistence.setEntitySchema({
         tenant,
@@ -57,7 +69,7 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
     },
   }: {
     entityName: string;
-    entity: any & { id: string };
+    entity: Omit<Entity, "createdAt" | "updatedAt">;
     tenant: string;
     options?: {
       schemaReconciliationMode?: "merge" | "override";
@@ -70,16 +82,21 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
       return err({ error: "MISSING_ID_ON_ENTITY" });
     }
 
-    const entitySchema = {
-      ...jsonToJsonSchema(entity),
+    const entitySchema: JSONSchema7 = {
       title: entityName,
+      ...jsonToJsonSchema(entity),
     };
+
     let action: "created" | "updated" = "created";
     if (!options.transient) {
       const result = await persistence.createOrUpdateEntity({
         tenant,
         entityName,
-        entity,
+        entity: {
+          ...entity,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
       });
       action = result.action;
     }
@@ -128,7 +145,7 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
   }: {
     entityName: string;
     tenant: string;
-    entityList: Array<object & { id: string }>;
+    entityList: Array<Omit<Entity, "createdAt" | "updatedAt">>;
     options?: {
       schemaReconciliationMode?: "merge" | "override";
       transient?: boolean;
@@ -139,7 +156,15 @@ export const createEntityCore = ({ persistence }: EntityCoreArgs) => {
       { title: entityName }
     );
     if (!options.transient) {
-      await persistence.saveEntityList({ tenant, entityName, entityList });
+      await persistence.saveEntityList({
+        tenant,
+        entityName,
+        entityList: entityList.map((entity) => ({
+          ...entity,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })),
+      });
     }
     processNewEntitySchema({
       entityName,

@@ -25,9 +25,11 @@ Deno.test(async function canQueryJustAddedOwnEntityWithGraphQL() {
   await entityCore.createOrUpdateEntity({
     entity: {
       id: "id",
-      myString: "String",
-      myInt: 12,
-      myFloat: 12.4,
+      data: {
+        myString: "String",
+        myInt: 12,
+        myFloat: 12.4,
+      },
     },
     tenant: "tenant",
     entityName: "testEntity",
@@ -37,9 +39,11 @@ Deno.test(async function canQueryJustAddedOwnEntityWithGraphQL() {
     source: `query {
       testEntity(id: "id") {
         id
-        myString
-        myInt
-        myFloat
+        data {
+          myString
+          myInt
+          myFloat
+        }
       }
     }
     `,
@@ -51,9 +55,11 @@ Deno.test(async function canQueryJustAddedOwnEntityWithGraphQL() {
   assertEquals((await result).data, {
     testEntity: {
       id: "id",
-      myString: "String",
-      myInt: 12,
-      myFloat: 12.4,
+      data: {
+        myString: "String",
+        myInt: 12,
+        myFloat: 12.4,
+      },
     },
   });
 });

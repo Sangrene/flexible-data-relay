@@ -1,5 +1,5 @@
 import { JSONSchema7 } from "../json-schema/jsonSchemaTypes.ts";
-import { EntityRepository } from "./entities.persistence.ts";
+import { Entity, EntityRepository } from "./entities.persistence.ts";
 
 export const createEntityInMemoryRepository = (): EntityRepository => {
   const inMemoryStore: {
@@ -27,7 +27,7 @@ export const createEntityInMemoryRepository = (): EntityRepository => {
     tenant,
   }: {
     entityName: string;
-    entity: object & { id: string };
+    entity: Entity;
     tenant: string;
   }) => {
     const index = getEntityCollection(tenant, entityName).findIndex(
@@ -41,7 +41,7 @@ export const createEntityInMemoryRepository = (): EntityRepository => {
     tenant,
   }: {
     entityName: string;
-    entity: object & { id: string };
+    entity: Entity;
     tenant: string;
   }) => {
     getEntityCollection(tenant, entityName).push(entity);
@@ -53,7 +53,7 @@ export const createEntityInMemoryRepository = (): EntityRepository => {
     tenant,
   }: {
     entityName: string;
-    entity: object & { id: string };
+    entity: Entity;
     tenant: string;
   }) => {
     const index = getEntityCollection(tenant, entityName).findIndex(
