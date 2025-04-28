@@ -1,7 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { WebServerProps, getTenantFromRequest } from "./webserver.ts";
 import { executeSourceAgainstSchema } from "../tenants/graphqlExecutionManager.ts";
-import { Subscription } from "../tenants/tenant.model.ts";
+import { SubscriptionCommand } from "../subscription/subscription.model.ts";
 
 export const createAppRoutes = (
   fastify: FastifyInstance,
@@ -187,7 +187,7 @@ export const createAppRoutes = (
   );
 
   fastify.post<{
-    Body: { subscription: Subscription };
+    Body: { subscription: SubscriptionCommand };
   }>(
     "/subscribe",
     {

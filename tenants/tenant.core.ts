@@ -1,19 +1,25 @@
 import { EntityCore } from "../entities/entity.core.ts";
 import { TenantsCache } from "../graphql/graphqlSchemasCache.ts";
 import { createGraphqlSchemaFromEntitiesSchema } from "../graphql/jsonToGraphql.ts";
-import { Access, Subscription, Tenant } from "./tenant.model.ts";
+import { Access, Tenant } from "./tenant.model.ts";
 import { TenantRepository } from "./tenant.persistence.ts";
 import {
   createHash,
   randomBytes,
 } from "https://deno.land/std@0.110.0/node/crypto.ts";
 import { Result, err, ok } from "neverthrow";
-
+import {
+  SubscriptionCommand,
+  SubscriptionQuery,
+} from "../subscription/subscription.model.ts";
+import { Env } from "../env/loadEnv.ts";
 interface TenantCoreArgs {
   tenantPersistenceHandler: TenantRepository;
+  env: Env;
 }
 export const createTenantCore = ({
   tenantPersistenceHandler,
+  env,
 }: TenantCoreArgs) => {
   let tenantsCache: TenantsCache | undefined;
 
@@ -91,24 +97,33 @@ export const createTenantCore = ({
     subscription,
     tenant,
   }: {
-    subscription: Omit<Subscription, "key">;
+    subscription: SubscriptionCommand;
     tenant: Tenant;
   }): Promise<
     Result<
-      Subscription & { key: string },
-      { error: "NO_PERMISSION_TO_SUBSCRIBE_TO_THIS_RESOURCE" }
+      SubscriptionCommand & { key: string },
+      | { error: "NO_PERMISSION_TO_SUBSCRIBE_TO_THIS_RESOURCE" }
+      | { error: "CANT_SUBSCRIBE_USING_QUEUE_BECAUSE_RABBITMQ_NOT_CONFIGURED" }
     >
   > => {
-    if (!tenant.accessAllowed.some((acc) => acc.owner === subscription.owner)) {
+    if (!tenant.accessAllowed.some((acc) => acc.owner === subscription.owner) && tenant.name !== subscription.owner) {
       return err({ error: "NO_PERMISSION_TO_SUBSCRIBE_TO_THIS_RESOURCE" });
     }
-    const savedSubScription = { ...subscription, key: crypto.randomUUID() };
+    if (!env.RABBIT_MQ_CONNECTION_STRING && subscription.type === "queue") {
+      return err({
+        error: "CANT_SUBSCRIBE_USING_QUEUE_BECAUSE_RABBITMQ_NOT_CONFIGURED",
+      });
+    }
+    const subscriptionWithKey: SubscriptionQuery = {
+      ...subscription,
+      key: crypto.randomUUID(),
+    } as SubscriptionQuery;
     await tenantPersistenceHandler.addSubscription({
-      subscription: savedSubScription,
+      subscription: subscriptionWithKey,
       tenantId: tenant._id,
     });
 
-    return ok(savedSubScription);
+    return ok(subscriptionWithKey);
   };
 
   const accessGuard = (

@@ -4,9 +4,9 @@ import { logger } from "../logging/logger.ts";
 export const createWebhookSubscriptionPlugin = (): SubscriptionPlugin => {
   return {
     publishMessage: async ({ subscription, action, entity }) => {
-      if (subscription.webhook) {
+      if (subscription.type === "webhook") {
         try {
-          await fetch(subscription.webhook.url, {
+          await fetch(subscription.webhookUrl, {
             method: "POST",
             body: JSON.stringify({ action, entity, key: subscription.key }),
           });

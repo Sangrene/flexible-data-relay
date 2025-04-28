@@ -8,7 +8,8 @@ import {
 import { executeSourceAgainstSchema } from "../tenants/graphqlExecutionManager.ts";
 import { createTenantCore } from "../tenants/tenant.core.ts";
 import { createTenantInMemoryRepository } from "../tenants/tenantsInMemoryRepository.ts";
-import { Timeout } from "https://deno.land/x/timeout@2.4/mod.ts";
+import { loadEnv } from "../env/loadEnv.ts";
+import { Timeout } from "https://deno.land/x/timeout/mod.ts";
 
 Deno.test(async function canQueryJustAddedOwnEntityWithGraphQL() {
   const persistence = createEntityInMemoryRepository();
@@ -18,6 +19,7 @@ Deno.test(async function canQueryJustAddedOwnEntityWithGraphQL() {
   });
   const tenantCore = createTenantCore({
     tenantPersistenceHandler: createTenantInMemoryRepository(),
+    env: loadEnv(),
   });
   tenantCore.setCache(store);
   entityCore.setCache(store);
@@ -63,3 +65,4 @@ Deno.test(async function canQueryJustAddedOwnEntityWithGraphQL() {
     },
   });
 });
+

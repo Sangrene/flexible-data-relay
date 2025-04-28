@@ -1,5 +1,5 @@
-import { Access, Subscription, Tenant } from "./tenant.model.ts";
-
+import { Access, Tenant } from "./tenant.model.ts";
+import { SubscriptionQuery } from "../subscription/subscription.model.ts";
 export interface TenantRepository {
   getTenantById: (tenantId: string) => Promise<Tenant | null>;
   createTenant: (tenant: Omit<Tenant, "_id">) => Promise<Tenant>;
@@ -11,6 +11,6 @@ export interface TenantRepository {
   ) => Promise<Tenant>;
   addSubscription: (p: {
     tenantId: string;
-    subscription: Subscription;
+    subscription: SubscriptionQuery;
   }) => Promise<Tenant>;
 }

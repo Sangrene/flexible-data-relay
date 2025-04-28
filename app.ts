@@ -48,6 +48,7 @@ const startApp = async () => {
   const entityCore = createEntityCore({ persistence: entityRepository });
   const tenantCore = createTenantCore({
     tenantPersistenceHandler: tenantRepository,
+    env,
   });
   const authCore = await createAuthCore({
     tenantCore,

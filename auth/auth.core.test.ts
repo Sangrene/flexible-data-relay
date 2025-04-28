@@ -16,6 +16,7 @@ Deno.test(async function canGenerateTenantTokenFromIdAndCredentials() {
   const entityCore = createEntityCore({ persistence: entityPersistence });
   const tenantCore = createTenantCore({
     tenantPersistenceHandler: tenantPersistence,
+    env: loadEnv(),
   });
   const cache = createTenantCache({
     initContent: await tenantCore.getAllSchemas(entityCore),
@@ -37,6 +38,7 @@ Deno.test(
     const tenantPersistence = createTenantInMemoryRepository();
     const tenantCore = createTenantCore({
       tenantPersistenceHandler: tenantPersistence,
+      env: loadEnv(),
     });
     const authCore = await createAuthCore({ tenantCore, env: loadEnv() });
     const newTenant = await tenantCore.createTenant("tenant");
@@ -53,6 +55,7 @@ Deno.test(
     const tenantPersistence = createTenantInMemoryRepository();
     const tenantCore = createTenantCore({
       tenantPersistenceHandler: tenantPersistence,
+      env: loadEnv(),
     });
     const authCore = await createAuthCore({ tenantCore, env: loadEnv() });
     const newTenant = await tenantCore.createTenant("tenant");
@@ -72,6 +75,7 @@ Deno.test(async function canGetTenantUsingToken() {
   const entityCore = createEntityCore({ persistence: entityPersistence });
   const tenantCore = createTenantCore({
     tenantPersistenceHandler: tenantPersistence,
+    env: loadEnv(),
   });
   const cache = createTenantCache({
     initContent: await tenantCore.getAllSchemas(entityCore),
@@ -96,6 +100,7 @@ Deno.test(async function canGenerateAdminToken() {
   const tenantPersistence = createTenantInMemoryRepository();
   const tenantCore = createTenantCore({
     tenantPersistenceHandler: tenantPersistence,
+    env: loadEnv(),
   });
   const authCore = await createAuthCore({
     tenantCore,
@@ -109,6 +114,7 @@ Deno.test(async function returnErrorIfGenerateAdminTokenWithWrongSecret() {
   const tenantPersistence = createTenantInMemoryRepository();
   const tenantCore = createTenantCore({
     tenantPersistenceHandler: tenantPersistence,
+    env: loadEnv(),
   });
   const authCore = await createAuthCore({
     tenantCore,
@@ -122,6 +128,7 @@ Deno.test(async function returnErrorIfGenerateAdminTokenWithNoAdminSecret() {
   const tenantPersistence = createTenantInMemoryRepository();
   const tenantCore = createTenantCore({
     tenantPersistenceHandler: tenantPersistence,
+    env: loadEnv(),
   });
   const authCore = await createAuthCore({
     tenantCore,
@@ -135,6 +142,7 @@ Deno.test(async function canGetAdminFromToken() {
   const tenantPersistence = createTenantInMemoryRepository();
   const tenantCore = createTenantCore({
     tenantPersistenceHandler: tenantPersistence,
+    env: loadEnv(),
   });
   const authCore = await createAuthCore({
     tenantCore,
@@ -150,6 +158,7 @@ Deno.test(async function notAdminTokenIsNotAdmin() {
   const tenantPersistence = createTenantInMemoryRepository();
   const tenantCore = createTenantCore({
     tenantPersistenceHandler: tenantPersistence,
+    env: loadEnv(),
   });
   const authCore = await createAuthCore({
     tenantCore,

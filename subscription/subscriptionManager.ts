@@ -1,11 +1,11 @@
 import { eventBus } from "../event/eventBus.ts";
 import { logger } from "../logging/logger.ts";
 import { TenantCore } from "../tenants/tenant.core.ts";
-import { Subscription } from "../tenants/tenant.model.ts";
+import { SubscriptionQuery } from "./subscription.model.ts";
 
 export interface SubscriptionPlugin {
   publishMessage: (p: {
-    subscription: Subscription;
+    subscription: SubscriptionQuery;
     entity: Record<string, any>;
     action: string;
   }) => Promise<void>;

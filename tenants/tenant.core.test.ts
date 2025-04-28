@@ -16,6 +16,7 @@ import { createWebhookSubscriptionPlugin } from "../subscription/webhookSubscrip
 import { createSubscriptionManager } from "../subscription/subscriptionManager.ts";
 import { Timeout } from "https://deno.land/x/timeout/mod.ts";
 import * as mf from "https://deno.land/x/mock_fetch@0.3.0/mod.ts";
+import { loadEnv } from "../env/loadEnv.ts";
 
 Deno.test(async function createTenantWithRightSchema() {
   const tenantPersistence = createTenantInMemoryRepository();
@@ -24,6 +25,7 @@ Deno.test(async function createTenantWithRightSchema() {
 
   const tenantCore = createTenantCore({
     tenantPersistenceHandler: tenantPersistence,
+    env: loadEnv(),
   });
   const cache = createTenantCache({
     initContent: await tenantCore.getAllSchemas(entityCore),
@@ -44,6 +46,7 @@ Deno.test(async function canTenantHaveAccessToHisOwnResource() {
 
   const tenantCore = createTenantCore({
     tenantPersistenceHandler: tenantPersistence,
+    env: loadEnv(),
   });
   const cache = createTenantCache({
     initContent: await tenantCore.getAllSchemas(entityCore),
@@ -67,6 +70,7 @@ Deno.test(
 
     const tenantCore = createTenantCore({
       tenantPersistenceHandler: tenantPersistence,
+      env: loadEnv(),
     });
     const cache = createTenantCache({
       initContent: await tenantCore.getAllSchemas(entityCore),
@@ -95,6 +99,7 @@ Deno.test(
 
     const tenantCore = createTenantCore({
       tenantPersistenceHandler: tenantPersistence,
+      env: loadEnv(),
     });
     const cache = createTenantCache({
       initContent: await tenantCore.getAllSchemas(entityCore),
@@ -122,6 +127,7 @@ Deno.test(
     const entityCore = createEntityCore({ persistence: entityPersistence });
     const tenantCore = createTenantCore({
       tenantPersistenceHandler: tenantPersistence,
+      env: loadEnv(),
     });
     const cache = createTenantCache({
       initContent: await tenantCore.getAllSchemas(entityCore),
@@ -158,6 +164,7 @@ Deno.test(async function sendWebhookRequestIfSubscribedAndEntityIsUpdated() {
 
   const tenantCore = createTenantCore({
     tenantPersistenceHandler: tenantPersistence,
+    env: loadEnv(),
   });
   const cache = createTenantCache({
     initContent: await tenantCore.getAllSchemas(entityCore),
@@ -186,9 +193,8 @@ Deno.test(async function sendWebhookRequestIfSubscribedAndEntityIsUpdated() {
       subscription: {
         owner: "tenant1",
         entityName: "entityTest",
-        webhook: {
-          url: "https://localhost:3000/test",
-        },
+        type: "webhook",
+        webhookUrl: "https://localhost:3000/test",
       },
       tenant: tenant2,
     })
@@ -217,6 +223,7 @@ Deno.test(async function tenantCanQueryHisOwnEntity() {
   const entityCore = createEntityCore({ persistence: entityPersistence });
   const tenantCore = createTenantCore({
     tenantPersistenceHandler: tenantPersistence,
+    env: loadEnv(),
   });
   const cache = createTenantCache({
     initContent: await tenantCore.getAllSchemas(entityCore),
@@ -247,6 +254,7 @@ Deno.test(async function schemaIsFilteredIfTenantHasAccessToAnotherTenantResourc
   const entityCore = createEntityCore({ persistence: entityPersistence });
   const tenantCore = createTenantCore({
     tenantPersistenceHandler: tenantPersistence,
+    env: loadEnv(),
   });
   const cache = createTenantCache({
     initContent: await tenantCore.getAllSchemas(entityCore),
@@ -282,3 +290,28 @@ Deno.test(async function schemaIsFilteredIfTenantHasAccessToAnotherTenantResourc
   assertEquals(result.getQueryType()?.getFields()["entityTest"], undefined);
   assertEquals(result.getQueryType()?.getFields()["entityTestList"], undefined);
 });
+
+Deno.test(async function tenantCantSubscribeToQueueIfRabbitMQIsNotConfigured() {
+  const tenantPersistence = createTenantInMemoryRepository();
+  const entityPersistence = createEntityInMemoryRepository();
+  const entityCore = createEntityCore({ persistence: entityPersistence });
+  const tenantCore = createTenantCore({
+    tenantPersistenceHandler: tenantPersistence,
+    env: {
+      ...loadEnv(),
+      RABBIT_MQ_CONNECTION_STRING: undefined,
+    },
+  });
+  const tenant = await tenantCore.createTenant("tenant");
+  const result = await tenantCore.createSubscription({
+    subscription: {
+      type: "queue",
+      entityName: "entityTest",
+      owner: "tenant",
+      queueName: "queueTest",
+    },
+    tenant: tenant,
+  });
+  assertEquals(result._unsafeUnwrapErr(), { error: "CANT_SUBSCRIBE_USING_QUEUE_BECAUSE_RABBITMQ_NOT_CONFIGURED" });
+});
+
