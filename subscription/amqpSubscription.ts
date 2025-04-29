@@ -2,10 +2,27 @@ import { connect } from "https://deno.land/x/amqp/mod.ts";
 import { SubscriptionPlugin } from "./subscriptionManager.ts";
 import { logger } from "../logging/logger.ts";
 import { Env } from "../env/loadEnv.ts";
-import { SubscriptionCommand } from "./subscription.model.ts";
+import {
+  QueueSubscriptionCommand,
+  SubscriptionQuery,
+  SubscriptionCommand,
+} from "./subscription.model.ts";
 
-export const computeQueueName = (tenantName: string,subscription: SubscriptionCommand) => {
+const computeQueueName = (
+  tenantName: string,
+  subscription: SubscriptionCommand
+) => {
   return `${tenantName}.${subscription.owner}.${subscription.entityName}`;
+};
+
+export const createAMQPSubscription = (
+  subscription: QueueSubscriptionCommand
+): SubscriptionQuery => {
+  return {
+    ...subscription,
+    key: crypto.randomUUID(),
+    queueName: computeQueueName(subscription.owner, subscription),
+  };
 };
 
 export const createAMQPSubscriptionPlugin = async ({

@@ -2,8 +2,25 @@ import { eventBus } from "../event/eventBus.ts";
 import { logger } from "../logging/logger.ts";
 import { TenantCore } from "../tenants/tenant.core.ts";
 import { Tenant } from "../tenants/tenant.model.ts";
-import { SubscriptionQuery } from "./subscription.model.ts";
+import {
+  SubscriptionQuery,
+  SubscriptionCommand,
+} from "./subscription.model.ts";
+import { createAMQPSubscription } from "./amqpSubscription.ts";
+import { createWebhookSubscription } from "./webhookSubscription.ts";
 
+export const computeSubscription = (
+  subscription: SubscriptionCommand
+): SubscriptionQuery => {
+  const type = subscription.type;
+  if (type === "queue") {
+    return createAMQPSubscription(subscription);
+  }
+  if (type === "webhook") {
+    return createWebhookSubscription(subscription);
+  }
+  throw new Error(`Unknown subscription type: ${type}`);
+};
 export interface SubscriptionPlugin {
   publishMessage: (p: {
     tenantName: string;
@@ -12,7 +29,9 @@ export interface SubscriptionPlugin {
     action: string;
   }) => Promise<void>;
   onTenantCreated?: (p: { tenant: Tenant }) => Promise<void>;
-  onSubscriptionCreated?: (p: { subscription: SubscriptionQuery }) => Promise<void>;
+  onSubscriptionCreated?: (p: {
+    subscription: SubscriptionQuery;
+  }) => Promise<void>;
 }
 
 export const createSubscriptionManager = ({

@@ -14,7 +14,7 @@ import {
 } from "../subscription/subscription.model.ts";
 import { Env } from "../env/loadEnv.ts";
 import { eventBus } from "../event/eventBus.ts";
-import { computeQueueName } from "../subscription/amqpSubscription.ts";
+import { computeSubscription } from "../subscription/subscriptionManager.ts";
 interface TenantCoreArgs {
   tenantPersistenceHandler: TenantRepository;
   env: Env;
@@ -109,7 +109,7 @@ export const createTenantCore = ({
     tenant: Tenant;
   }): Promise<
     Result<
-      SubscriptionCommand & { key: string },
+      SubscriptionQuery,
       | { error: "NO_PERMISSION_TO_SUBSCRIBE_TO_THIS_RESOURCE" }
       | { error: "CANT_SUBSCRIBE_USING_QUEUE_BECAUSE_RABBITMQ_NOT_CONFIGURED" }
     >
@@ -125,12 +125,7 @@ export const createTenantCore = ({
         error: "CANT_SUBSCRIBE_USING_QUEUE_BECAUSE_RABBITMQ_NOT_CONFIGURED",
       });
     }
-    const subscriptionWithKey: SubscriptionQuery = {
-      ...subscription,
-      queueName:
-        subscription.type === "queue" ? computeQueueName(tenant.name, subscription) : undefined,
-      key: crypto.randomUUID(),
-    } as SubscriptionQuery;
+    const subscriptionWithKey = computeSubscription(subscription);
     await tenantPersistenceHandler.addSubscription({
       subscription: subscriptionWithKey,
       tenantId: tenant._id,

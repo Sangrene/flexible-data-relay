@@ -74,7 +74,14 @@ Deno.test(async function sendWebhookRequestIfSubscribedAndEntityIsUpdated() {
   assertSpyCall(publishMessageSpy, 0, {
     args: [
       {
-        subscription,
+        subscription: {
+          type: "webhook",
+          webhookUrl: "https://localhost:3000/test",
+          entityName: "entityTest",
+          owner: "tenant1",
+          key: subscription.key,
+        },
+        tenantName: "tenant2",
         action: "created",
         entity: { id: "id", data: { id: "id", name: "test" } },
       },
