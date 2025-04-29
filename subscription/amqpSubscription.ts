@@ -19,14 +19,18 @@ export const createAMQPSubscriptionPlugin = async ({
   logger.info("Connected to provided RabbitMQ instance.");
   return {
     publishMessage: async ({ action, entity, subscription }) => {
-      if (subscription.type === "queue") {
-        await channel.declareQueue({ queue: subscription.queueName });
-        await channel.publish(
-          { routingKey: subscription.queueName },
-          { contentType: "application/json" },
-          new TextEncoder().encode(JSON.stringify({ entity, action }))
-        );
-      }
+      // if (subscription.type === "queue") {
+      //   await channel.declareQueue({ queue: subscription.queueName });
+      //   await channel.publish(
+      //     { routingKey: subscription.queueName },
+      //     { contentType: "application/json" },
+      //     new TextEncoder().encode(JSON.stringify({ entity, action }))
+      //   );
+      // }
+      
+    },
+    onTenantCreated: async ({ tenant }) => {
+      
     },
   };
 };

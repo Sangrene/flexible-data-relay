@@ -16,8 +16,6 @@ import { createSubscriptionManager } from "../subscription/subscriptionManager.t
 import { Timeout } from "https://deno.land/x/timeout/mod.ts";
 import * as mf from "https://deno.land/x/mock_fetch@0.3.0/mod.ts";
 
-
-
 Deno.test(async function sendWebhookRequestIfSubscribedAndEntityIsUpdated() {
   mf.install();
   mf.mock("GET@/test", (_req, _params) => {

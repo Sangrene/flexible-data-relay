@@ -1,4 +1,7 @@
-import { assertEquals, assertExists } from "https://deno.land/std@0.212.0/assert/mod.ts";
+import {
+  assertEquals,
+  assertExists,
+} from "https://deno.land/std@0.212.0/assert/mod.ts";
 
 import { createTenantCore } from "./tenant.core.ts";
 import { createTenantInMemoryRepository } from "./tenantsInMemoryRepository.ts";
@@ -8,17 +11,10 @@ import {
 } from "../graphql/graphqlSchemasCache.ts";
 import { createEntityInMemoryRepository } from "../entities/entitiesinMemoryRepository.ts";
 import { createEntityCore } from "../entities/entity.core.ts";
-import {
-  assertSpyCall,
-  spy,
-} from "https://deno.land/std@0.212.0/testing/mock.ts";
-import { createWebhookSubscriptionPlugin } from "../subscription/webhookSubscription.ts";
-import { createSubscriptionManager } from "../subscription/subscriptionManager.ts";
-import { Timeout } from "https://deno.land/x/timeout/mod.ts";
-import * as mf from "https://deno.land/x/mock_fetch@0.3.0/mod.ts";
+
 import { loadEnv } from "../env/loadEnv.ts";
 
-Deno.test(async function createTenantWithRightSchema() {
+Deno.test("Create tenant with right schema", async () => {
   const tenantPersistence = createTenantInMemoryRepository();
   const entityPersistence = createEntityInMemoryRepository();
   const entityCore = createEntityCore({ persistence: entityPersistence });
@@ -39,7 +35,7 @@ Deno.test(async function createTenantWithRightSchema() {
   assertEquals(tenant, storedTenant);
 });
 
-Deno.test(async function canTenantHaveAccessToHisOwnResource() {
+Deno.test("Tenant can have access to his own resource", async () => {
   const tenantPersistence = createTenantInMemoryRepository();
   const entityPersistence = createEntityInMemoryRepository();
   const entityCore = createEntityCore({ persistence: entityPersistence });
@@ -57,13 +53,16 @@ Deno.test(async function canTenantHaveAccessToHisOwnResource() {
 
   const tenant = await tenantCore.createTenant("tenant");
   assertEquals(
-    tenantCore.accessGuard(tenant, { owner: "tenant", entityName: "entityTest" })._unsafeUnwrap(),
+    tenantCore
+      .accessGuard(tenant, { owner: "tenant", entityName: "entityTest" })
+      ._unsafeUnwrap(),
     true
   );
 });
 
 Deno.test(
-  async function tenantCantHaveAccessToEntityIfGrantedAccessToAnotherEntity() {
+  "Tenant can't have access to entity if granted access to another entity",
+  async () => {
     const tenantPersistence = createTenantInMemoryRepository();
     const entityPersistence = createEntityInMemoryRepository();
     const entityCore = createEntityCore({ persistence: entityPersistence });
@@ -86,13 +85,17 @@ Deno.test(
       allowedTenantName: "tenant",
       entityName: "entityTest",
     });
-    const guardResult = tenantCore.accessGuard(tenant, { owner: "tenant2", entityName: "" });
+    const guardResult = tenantCore.accessGuard(tenant, {
+      owner: "tenant2",
+      entityName: "",
+    });
     assertEquals(guardResult.isErr(), true);
   }
 );
 
 Deno.test(
-  async function tenantCantHaveAccessToEntityIfGrantedAccessToAnotherEntityWithSameName() {
+  "Tenant can't have access to entity if granted access to another entity with same name",
+  async () => {
     const tenantPersistence = createTenantInMemoryRepository();
     const entityPersistence = createEntityInMemoryRepository();
     const entityCore = createEntityCore({ persistence: entityPersistence });
@@ -115,13 +118,17 @@ Deno.test(
       allowedTenantName: "tenant",
       entityName: "entityTest",
     });
-    const guardResult = tenantCore.accessGuard(tenant, { owner: "tenant3", entityName: "entityTest" });
+    const guardResult = tenantCore.accessGuard(tenant, {
+      owner: "tenant3",
+      entityName: "entityTest",
+    });
     assertEquals(guardResult.isErr(), true);
   }
 );
 
 Deno.test(
-  async function tenantCanAccessAnotherOwnerResourceWithAuthorization() {
+  "Tenant can access another owner resource with authorization",
+  async () => {
     const tenantPersistence = createTenantInMemoryRepository();
     const entityPersistence = createEntityInMemoryRepository();
     const entityCore = createEntityCore({ persistence: entityPersistence });
@@ -145,79 +152,15 @@ Deno.test(
     });
     const tenant2 = await tenantPersistence.getTenantByName("tenant2");
     assertEquals(
-      tenantCore.accessGuard(tenant2!, { owner: "tenant1", entityName: "entityTest" })._unsafeUnwrap(),
+      tenantCore
+        .accessGuard(tenant2!, { owner: "tenant1", entityName: "entityTest" })
+        ._unsafeUnwrap(),
       true
     );
   }
 );
 
-Deno.test(async function sendWebhookRequestIfSubscribedAndEntityIsUpdated() {
-  mf.install();
-  mf.mock("GET@/test", (_req, _params) => {
-    return new Response("", {
-      status: 200,
-    });
-  });
-  const tenantPersistence = createTenantInMemoryRepository();
-  const entityPersistence = createEntityInMemoryRepository();
-  const entityCore = createEntityCore({ persistence: entityPersistence });
-
-  const tenantCore = createTenantCore({
-    tenantPersistenceHandler: tenantPersistence,
-    env: loadEnv(),
-  });
-  const cache = createTenantCache({
-    initContent: await tenantCore.getAllSchemas(entityCore),
-    createSchemaChangeHandler: createLocalSchemaChangeHandler(),
-  });
-  tenantCore.setCache(cache);
-  entityCore.setCache(cache);
-  const webhookSubscriptionPlugin = createWebhookSubscriptionPlugin();
-  const publishMessageSpy = spy(webhookSubscriptionPlugin, "publishMessage");
-
-  createSubscriptionManager({
-    subscriptionPlugins: [webhookSubscriptionPlugin],
-    tenantCore,
-  });
-
-  await tenantCore.createTenant("tenant1");
-  const tenant2 = await tenantCore.createTenant("tenant2");
-  await tenantCore.allowTenantAccessToOwnResource({
-    currentTenantName: "tenant1",
-    allowedTenantName: "tenant2",
-    entityName: "entityTest",
-  });
-
-  const subscription = (
-    await tenantCore.createSubscription({
-      subscription: {
-        owner: "tenant1",
-        entityName: "entityTest",
-        type: "webhook",
-        webhookUrl: "https://localhost:3000/test",
-      },
-      tenant: tenant2,
-    })
-  )._unsafeUnwrap();
-
-  await entityCore.createOrUpdateEntity({
-    entity: { id: "id", data: { id: "id", name: "test" } },
-    entityName: "entityTest",
-    tenant: "tenant1",
-  });
-  await Timeout.wait(500);
-  assertSpyCall(publishMessageSpy, 0, {
-    args: [
-      {
-        subscription,
-        action: "created",
-        entity: { id: "id", data: { id: "id", name: "test" } },
-      },
-    ],
-  });
-});
-
-Deno.test(async function tenantCanQueryHisOwnEntity() {
+Deno.test("Tenant can query his own entity", async () => {
   const tenantPersistence = createTenantInMemoryRepository();
   const entityPersistence = createEntityInMemoryRepository();
   const entityCore = createEntityCore({ persistence: entityPersistence });
@@ -247,71 +190,87 @@ Deno.test(async function tenantCanQueryHisOwnEntity() {
   assertExists(result.getQueryType()?.getFields()["entityTestList"]);
 });
 
-
-Deno.test(async function schemaIsFilteredIfTenantHasAccessToAnotherTenantResource() {
+Deno.test("Schema is filtered if tenant has access to another tenant resource", async () => {
   const tenantPersistence = createTenantInMemoryRepository();
   const entityPersistence = createEntityInMemoryRepository();
   const entityCore = createEntityCore({ persistence: entityPersistence });
   const tenantCore = createTenantCore({
-    tenantPersistenceHandler: tenantPersistence,
-    env: loadEnv(),
-  });
-  const cache = createTenantCache({
-    initContent: await tenantCore.getAllSchemas(entityCore),
-    createSchemaChangeHandler: createLocalSchemaChangeHandler(),
-  });
-  tenantCore.setCache(cache);
-  entityCore.setCache(cache);
-  await tenantCore.createTenant("tenant");
-  const tenant2 = await tenantCore.createTenant("tenant2");
+      tenantPersistenceHandler: tenantPersistence,
+      env: loadEnv(),
+    });
+    const cache = createTenantCache({
+      initContent: await tenantCore.getAllSchemas(entityCore),
+      createSchemaChangeHandler: createLocalSchemaChangeHandler(),
+    });
+    tenantCore.setCache(cache);
+    entityCore.setCache(cache);
+    await tenantCore.createTenant("tenant");
+    const tenant2 = await tenantCore.createTenant("tenant2");
 
-  await entityCore.createOrUpdateEntity({
-    entity: { id: "id", data: { id: "id", name: "test" } },
-    entityName: "entityTest",
-    tenant: "tenant",
-  });
-  await entityCore.createOrUpdateEntity({
-    entity: { id: "id2", data: { id: "id2", name: "test2" } },
-    entityName: "entityTest2",
-    tenant: "tenant",
-  });
-  await tenantCore.allowTenantAccessToOwnResource({
-    currentTenantName: "tenant",
-    allowedTenantName: "tenant2",
-    entityName: "entityTest2",
-  });
-  const result = tenantCore.getTenantGraphqlSchema({
-    tenant: "tenant",
-    tenantRequestingAccess: tenant2,
-    entityCore,
-  });
-  assertExists(result.getQueryType()?.getFields()["entityTest2"]);
-  assertExists(result.getQueryType()?.getFields()["entityTest2List"]);
-  assertEquals(result.getQueryType()?.getFields()["entityTest"], undefined);
-  assertEquals(result.getQueryType()?.getFields()["entityTestList"], undefined);
-});
-
-Deno.test(async function tenantCantSubscribeToQueueIfRabbitMQIsNotConfigured() {
-  const tenantPersistence = createTenantInMemoryRepository();
-  const entityPersistence = createEntityInMemoryRepository();
-  const entityCore = createEntityCore({ persistence: entityPersistence });
-  const tenantCore = createTenantCore({
-    tenantPersistenceHandler: tenantPersistence,
-    env: {
-      ...loadEnv(),
-      RABBIT_MQ_CONNECTION_STRING: undefined,
-    },
-  });
-  const tenant = await tenantCore.createTenant("tenant");
-  const result = await tenantCore.createSubscription({
-    subscription: {
-      type: "queue",
+    await entityCore.createOrUpdateEntity({
+      entity: { id: "id", data: { id: "id", name: "test" } },
       entityName: "entityTest",
-      owner: "tenant",
-      queueName: "queueTest",
-    },
-    tenant: tenant,
-  });
-  assertEquals(result._unsafeUnwrapErr(), { error: "CANT_SUBSCRIBE_USING_QUEUE_BECAUSE_RABBITMQ_NOT_CONFIGURED" });
-});
+      tenant: "tenant",
+    });
+    await entityCore.createOrUpdateEntity({
+      entity: { id: "id2", data: { id: "id2", name: "test2" } },
+      entityName: "entityTest2",
+      tenant: "tenant",
+    });
+    await tenantCore.allowTenantAccessToOwnResource({
+      currentTenantName: "tenant",
+      allowedTenantName: "tenant2",
+      entityName: "entityTest2",
+    });
+    const result = tenantCore.getTenantGraphqlSchema({
+      tenant: "tenant",
+      tenantRequestingAccess: tenant2,
+      entityCore,
+    });
+    assertExists(result.getQueryType()?.getFields()["entityTest2"]);
+    assertExists(result.getQueryType()?.getFields()["entityTest2List"]);
+    assertEquals(result.getQueryType()?.getFields()["entityTest"], undefined);
+    assertEquals(
+      result.getQueryType()?.getFields()["entityTestList"],
+      undefined
+    );
+  }
+);
 
+Deno.test(
+  "Tenant can't subscribe to queue if rabbitMQ is not configured",
+  async () => {
+    const tenantPersistence = createTenantInMemoryRepository();
+    const tenantCore = createTenantCore({
+      tenantPersistenceHandler: tenantPersistence,
+      env: {
+        ...loadEnv(),
+        RABBIT_MQ_CONNECTION_STRING: undefined,
+      },
+    });
+    const tenant = await tenantCore.createTenant("tenant");
+    const result = await tenantCore.createSubscription({
+      subscription: {
+        type: "queue",
+        entityName: "entityTest",
+        owner: "tenant",
+        queueName: "queueTest",
+      },
+      tenant: tenant,
+    });
+    assertEquals(result._unsafeUnwrapErr(), {
+      error: "CANT_SUBSCRIBE_USING_QUEUE_BECAUSE_RABBITMQ_NOT_CONFIGURED",
+    });
+  }
+);
+
+Deno.test(
+  "When tenant is created, associated user is created in message broker ",
+  async () => {
+    const tenantPersistence = createTenantInMemoryRepository();
+    const tenantCore = createTenantCore({
+      tenantPersistenceHandler: tenantPersistence,
+      env: loadEnv(),
+    });
+  }
+);

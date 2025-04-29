@@ -13,6 +13,7 @@ import {
   SubscriptionQuery,
 } from "../subscription/subscription.model.ts";
 import { Env } from "../env/loadEnv.ts";
+import { eventBus } from "../event/eventBus.ts";
 interface TenantCoreArgs {
   tenantPersistenceHandler: TenantRepository;
   env: Env;
@@ -68,6 +69,12 @@ export const createTenantCore = ({
       accessAllowed: [],
       subscriptions: [],
     });
+    eventBus.publish({
+      queue: "tenant.created",
+      message: {
+        tenant,
+      },
+    });
     return tenant;
   };
 
@@ -106,7 +113,10 @@ export const createTenantCore = ({
       | { error: "CANT_SUBSCRIBE_USING_QUEUE_BECAUSE_RABBITMQ_NOT_CONFIGURED" }
     >
   > => {
-    if (!tenant.accessAllowed.some((acc) => acc.owner === subscription.owner) && tenant.name !== subscription.owner) {
+    if (
+      !tenant.accessAllowed.some((acc) => acc.owner === subscription.owner) &&
+      tenant.name !== subscription.owner
+    ) {
       return err({ error: "NO_PERMISSION_TO_SUBSCRIBE_TO_THIS_RESOURCE" });
     }
     if (!env.RABBIT_MQ_CONNECTION_STRING && subscription.type === "queue") {
