@@ -2,6 +2,11 @@ import { connect } from "https://deno.land/x/amqp/mod.ts";
 import { SubscriptionPlugin } from "./subscriptionManager.ts";
 import { logger } from "../logging/logger.ts";
 import { Env } from "../env/loadEnv.ts";
+import { SubscriptionCommand } from "./subscription.model.ts";
+
+export const computeQueueName = (tenantName: string,subscription: SubscriptionCommand) => {
+  return `${tenantName}.${subscription.owner}.${subscription.entityName}`;
+};
 
 export const createAMQPSubscriptionPlugin = async ({
   env,
@@ -19,18 +24,20 @@ export const createAMQPSubscriptionPlugin = async ({
   logger.info("Connected to provided RabbitMQ instance.");
   return {
     publishMessage: async ({ action, entity, subscription }) => {
-      // if (subscription.type === "queue") {
-      //   await channel.declareQueue({ queue: subscription.queueName });
-      //   await channel.publish(
-      //     { routingKey: subscription.queueName },
-      //     { contentType: "application/json" },
-      //     new TextEncoder().encode(JSON.stringify({ entity, action }))
-      //   );
-      // }
-      
+      if (subscription.type === "queue") {
+        await channel.declareQueue({ queue: subscription.queueName });
+        await channel.publish(
+          { routingKey: subscription.queueName },
+          { contentType: "application/json" },
+          new TextEncoder().encode(JSON.stringify({ entity, action }))
+        );
+      }
     },
-    onTenantCreated: async ({ tenant }) => {
-      
+    onTenantCreated: async () => {
+      // TODO: Create a user for the tenant
+    },
+    onSubscriptionCreated: async () => {
+      // TODO: Create a queue for the subscription (tenant.owner.entity)
     },
   };
 };

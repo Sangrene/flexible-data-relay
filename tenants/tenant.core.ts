@@ -14,6 +14,7 @@ import {
 } from "../subscription/subscription.model.ts";
 import { Env } from "../env/loadEnv.ts";
 import { eventBus } from "../event/eventBus.ts";
+import { computeQueueName } from "../subscription/amqpSubscription.ts";
 interface TenantCoreArgs {
   tenantPersistenceHandler: TenantRepository;
   env: Env;
@@ -126,6 +127,8 @@ export const createTenantCore = ({
     }
     const subscriptionWithKey: SubscriptionQuery = {
       ...subscription,
+      queueName:
+        subscription.type === "queue" ? computeQueueName(tenant.name, subscription) : undefined,
       key: crypto.randomUUID(),
     } as SubscriptionQuery;
     await tenantPersistenceHandler.addSubscription({

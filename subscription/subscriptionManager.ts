@@ -6,11 +6,13 @@ import { SubscriptionQuery } from "./subscription.model.ts";
 
 export interface SubscriptionPlugin {
   publishMessage: (p: {
+    tenantName: string;
     subscription: SubscriptionQuery;
     entity: Record<string, any>;
     action: string;
   }) => Promise<void>;
   onTenantCreated?: (p: { tenant: Tenant }) => Promise<void>;
+  onSubscriptionCreated?: (p: { subscription: SubscriptionQuery }) => Promise<void>;
 }
 
 export const createSubscriptionManager = ({
@@ -40,6 +42,7 @@ export const createSubscriptionManager = ({
           try {
             subscriptionPlugins.forEach(async (plugin) => {
               await plugin.publishMessage({
+                tenantName: tenant.name,
                 subscription: sub,
                 entity,
                 action: "updated",
@@ -62,6 +65,7 @@ export const createSubscriptionManager = ({
           subscriptionPlugins.forEach(async (plugin) => {
             try {
               await plugin.publishMessage({
+                tenantName: tenant.name,
                 subscription: sub,
                 entity,
                 action: "created",

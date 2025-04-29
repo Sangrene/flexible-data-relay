@@ -1,6 +1,5 @@
 type QueueSubscription = {
   type: "queue";
-  queueName: string;
 };
 
 type WebhookSubscription = {
@@ -16,4 +15,7 @@ type SubscriptionBase = {
 export type SubscriptionCommand = SubscriptionBase &
   (QueueSubscription | WebhookSubscription);
 
-export type SubscriptionQuery = SubscriptionCommand & { key: string };
+export type SubscriptionQuery = SubscriptionBase &
+  ((QueueSubscription & { queueName: string }) | WebhookSubscription) & {
+    key: string;
+  };

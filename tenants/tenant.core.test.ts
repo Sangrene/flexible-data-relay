@@ -254,23 +254,11 @@ Deno.test(
         type: "queue",
         entityName: "entityTest",
         owner: "tenant",
-        queueName: "queueTest",
       },
       tenant: tenant,
     });
     assertEquals(result._unsafeUnwrapErr(), {
       error: "CANT_SUBSCRIBE_USING_QUEUE_BECAUSE_RABBITMQ_NOT_CONFIGURED",
-    });
-  }
-);
-
-Deno.test(
-  "When tenant is created, associated user is created in message broker ",
-  async () => {
-    const tenantPersistence = createTenantInMemoryRepository();
-    const tenantCore = createTenantCore({
-      tenantPersistenceHandler: tenantPersistence,
-      env: loadEnv(),
     });
   }
 );
