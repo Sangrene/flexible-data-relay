@@ -16,8 +16,6 @@ import { createSubscriptionManager } from "../subscription/subscriptionManager.t
 import { Timeout } from "https://deno.land/x/timeout/mod.ts";
 import * as mf from "https://deno.land/x/mock_fetch@0.3.0/mod.ts";
 
-
-
 Deno.test(async function sendWebhookRequestIfSubscribedAndEntityIsUpdated() {
   mf.install();
   mf.mock("GET@/test", (_req, _params) => {
@@ -76,7 +74,14 @@ Deno.test(async function sendWebhookRequestIfSubscribedAndEntityIsUpdated() {
   assertSpyCall(publishMessageSpy, 0, {
     args: [
       {
-        subscription,
+        subscription: {
+          type: "webhook",
+          webhookUrl: "https://localhost:3000/test",
+          entityName: "entityTest",
+          owner: "tenant1",
+          key: subscription.key,
+        },
+        tenantName: "tenant2",
         action: "created",
         entity: { id: "id", data: { id: "id", name: "test" } },
       },

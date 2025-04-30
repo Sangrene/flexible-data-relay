@@ -1,5 +1,18 @@
 import { SubscriptionPlugin } from "./subscriptionManager.ts";
 import { logger } from "../logging/logger.ts";
+import {
+  WebhookSubscriptionCommand,
+  SubscriptionQuery,
+} from "./subscription.model.ts";
+
+export const createWebhookSubscription = (
+  subscription: WebhookSubscriptionCommand
+): SubscriptionQuery => {
+  return {
+    ...subscription,
+    key: crypto.randomUUID(),
+  };
+};
 
 export const createWebhookSubscriptionPlugin = (): SubscriptionPlugin => {
   return {

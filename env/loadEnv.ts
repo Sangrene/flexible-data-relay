@@ -1,6 +1,7 @@
 export interface Env {
   MONGODB_CONNECTION_STRING: string;
   RABBIT_MQ_CONNECTION_STRING?: string;
+  RABBIT_MQ_CREDENTIALS?: string;
   AUTH_SECRET_KEY: string;
   ADMIN_SECRET: string;
   MODE: "inMemory" | "integrated";

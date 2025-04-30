@@ -12,4 +12,5 @@ export interface Tenant {
   lastSecretHash: string;
   accessAllowed: Access[];
   subscriptions?: SubscriptionQuery[];
+  messageBrokerPassword: string;
 }
