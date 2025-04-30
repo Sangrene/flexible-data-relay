@@ -63,12 +63,14 @@ export const createTenantCore = ({
   const createTenant = async (tenantName: string) => {
     const secret = randomBytes(64).toString("hex");
     const hash = createHash("md5").update(secret).digest("hex") as string;
+    const messageBrokerPassword = randomBytes(64).toString("hex");
     const tenant = await tenantPersistenceHandler.createTenant({
       name: tenantName,
       lastSecret: secret,
       lastSecretHash: hash,
       accessAllowed: [],
       subscriptions: [],
+      messageBrokerPassword,
     });
     eventBus.publish({
       queue: "tenant.created",

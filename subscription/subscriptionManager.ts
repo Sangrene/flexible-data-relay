@@ -30,6 +30,7 @@ export interface SubscriptionPlugin {
   }) => Promise<void>;
   onTenantCreated?: (p: { tenant: Tenant }) => Promise<void>;
   onSubscriptionCreated?: (p: {
+    tenantName: string;
     subscription: SubscriptionQuery;
   }) => Promise<void>;
 }
