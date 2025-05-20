@@ -21,7 +21,7 @@ import { createWebhookSubscriptionPlugin } from "./subscription/webhookSubscript
 import { createAMQPSubscriptionPlugin } from "./subscription/amqpSubscription.ts";
 import { logger } from "./logging/logger.ts";
 import { Env, loadEnv } from "./env/loadEnv.ts";
-
+import { createMessageBrokerManager } from "./message-broker/messageBrokerManager.ts";
 const componentMap = {
   inMemory: async () => {
     return {
@@ -62,9 +62,10 @@ const startApp = async () => {
   tenantCore.setCache(cache);
   entityCore.setCache(cache);
 
+  const messageBrokerManager = createMessageBrokerManager({ env });
   const subscriptionPlugins: SubscriptionPlugin[] = [
     createWebhookSubscriptionPlugin(),
-    await createAMQPSubscriptionPlugin({ env }),
+    await createAMQPSubscriptionPlugin({ env, messageBrokerManager, tenantCore }),
   ];
 
   createSubscriptionManager({

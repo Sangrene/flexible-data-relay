@@ -2,7 +2,7 @@ import { Env } from "../env/loadEnv.ts";
 import { encodeBase64 } from "https://deno.land/std@0.205.0/encoding/base64.ts";
 import { logger } from "../logging/logger.ts";
 
-const createMessageBrokerManager = ({ env }: { env: Env }) => {
+export const createMessageBrokerManager = ({ env }: { env: Env }) => {
   const makeRabbitMQAdminRequest = (
     path: `/api/${string}`,
     method: "PUT" | "POST",
