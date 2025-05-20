@@ -6,12 +6,13 @@ import {
 import { SubscriptionPlugin } from "./subscriptionManager.ts";
 import { logger } from "../logging/logger.ts";
 import { Env } from "../env/loadEnv.ts";
-import {
+import type {
   QueueSubscriptionCommand,
   SubscriptionQuery,
   SubscriptionCommand,
 } from "./subscription.model.ts";
-import { encodeBase64 } from "https://deno.land/std@0.205.0/encoding/base64.ts";
+import type { MessageBrokerManager } from "../message-broker/messageBrokerManager.ts";
+import type { TenantCore } from "../tenants/tenant.core.ts";
 
 const computeQueueName = (
   tenantName: string,
@@ -32,8 +33,11 @@ export const createAMQPSubscription = (
 
 export const createAMQPSubscriptionPlugin = async ({
   env,
+  messageBrokerManager,
 }: {
   env: Env;
+  messageBrokerManager: MessageBrokerManager;
+  tenantCore: TenantCore;
 }): Promise<SubscriptionPlugin> => {
   if (!env.RABBIT_MQ_CONNECTION_STRING || !env.RABBIT_MQ_CREDENTIALS) {
     logger.error("RabbitMQ connection string or credentials are not provided.");
@@ -41,28 +45,6 @@ export const createAMQPSubscriptionPlugin = async ({
       publishMessage: async () => {},
     };
   }
-  const makeRabbitMQAdminRequest = (
-    path: `/api/${string}`,
-    method: "PUT" | "POST",
-    body: Record<string, unknown>
-  ) => {
-    if (!env.RABBIT_MQ_CONNECTION_STRING || !env.RABBIT_MQ_CREDENTIALS) {
-      logger.error(
-        "RabbitMQ connection string or credentials are not provided."
-      );
-      throw new Error(
-        "RabbitMQ connection string or credentials are not provided."
-      );
-    }
-    return fetch(env.RABBIT_MQ_CONNECTION_STRING + path, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Basic ${encodeBase64(env.RABBIT_MQ_CREDENTIALS)}`,
-      },
-      body: JSON.stringify(body),
-    });
-  };
   const connectionPool = new Map<
     string,
     { connection: AmqpConnection; channel: AmqpChannel }
@@ -91,22 +73,17 @@ export const createAMQPSubscriptionPlugin = async ({
         );
         return;
       }
-      await makeRabbitMQAdminRequest(`/api/users/${tenant.name}`, "PUT", {
+      await messageBrokerManager.createTenantUser({
+        name: tenant.name,
         password: tenant.messageBrokerPassword,
-        tags: ["tenant"],
       });
-      await makeRabbitMQAdminRequest(`/api/vhosts/${tenant.name}-host`, "PUT", {
-        description: `Virtual host for tenant ${tenant.name}`,
+      await messageBrokerManager.createUserVhost(tenant.name);
+      await messageBrokerManager.setAccessPermissionForUserVHost(tenant.name);
+      await messageBrokerManager.setAdminPermissionsForVHost({
+        adminName: env.RABBIT_MQ_CREDENTIALS.split(":")[0],
+        vhost: tenant.name,
       });
-      await makeRabbitMQAdminRequest(
-        `/api/permissions/${tenant.name}-host/${tenant.name}`,
-        "PUT",
-        {
-          configure: "",
-          write: ".*",
-          read: ".*",
-        }
-      );
+
       const connection = await connect(
         env.RABBIT_MQ_CONNECTION_STRING + `/${tenant.name}-host`
       );
