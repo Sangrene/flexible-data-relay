@@ -13,6 +13,8 @@ import {
   SubscriptionQuery,
 } from "../subscription/subscription.model.ts";
 import { Env } from "../env/loadEnv.ts";
+import { eventBus } from "../event/eventBus.ts";
+import { computeSubscription } from "../subscription/subscriptionManager.ts";
 interface TenantCoreArgs {
   tenantPersistenceHandler: TenantRepository;
   env: Env;
@@ -61,12 +63,20 @@ export const createTenantCore = ({
   const createTenant = async (tenantName: string) => {
     const secret = randomBytes(64).toString("hex");
     const hash = createHash("md5").update(secret).digest("hex") as string;
+    const messageBrokerPassword = randomBytes(64).toString("hex");
     const tenant = await tenantPersistenceHandler.createTenant({
       name: tenantName,
       lastSecret: secret,
       lastSecretHash: hash,
       accessAllowed: [],
       subscriptions: [],
+      messageBrokerPassword,
+    });
+    eventBus.publish({
+      queue: "tenant.created",
+      message: {
+        tenant,
+      },
     });
     return tenant;
   };
@@ -101,12 +111,15 @@ export const createTenantCore = ({
     tenant: Tenant;
   }): Promise<
     Result<
-      SubscriptionCommand & { key: string },
+      SubscriptionQuery,
       | { error: "NO_PERMISSION_TO_SUBSCRIBE_TO_THIS_RESOURCE" }
       | { error: "CANT_SUBSCRIBE_USING_QUEUE_BECAUSE_RABBITMQ_NOT_CONFIGURED" }
     >
   > => {
-    if (!tenant.accessAllowed.some((acc) => acc.owner === subscription.owner) && tenant.name !== subscription.owner) {
+    if (
+      !tenant.accessAllowed.some((acc) => acc.owner === subscription.owner) &&
+      tenant.name !== subscription.owner
+    ) {
       return err({ error: "NO_PERMISSION_TO_SUBSCRIBE_TO_THIS_RESOURCE" });
     }
     if (!env.RABBIT_MQ_CONNECTION_STRING && subscription.type === "queue") {
@@ -114,10 +127,7 @@ export const createTenantCore = ({
         error: "CANT_SUBSCRIBE_USING_QUEUE_BECAUSE_RABBITMQ_NOT_CONFIGURED",
       });
     }
-    const subscriptionWithKey: SubscriptionQuery = {
-      ...subscription,
-      key: crypto.randomUUID(),
-    } as SubscriptionQuery;
+    const subscriptionWithKey = computeSubscription(subscription);
     await tenantPersistenceHandler.addSubscription({
       subscription: subscriptionWithKey,
       tenantId: tenant._id,

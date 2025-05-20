@@ -28,9 +28,7 @@ export const createAppRoutes = (
           201: {
             description: "Successful response",
             type: "object",
-            properties: {
-              Bearer: { type: "string" },
-            },
+            properties: {},
           },
         },
       },

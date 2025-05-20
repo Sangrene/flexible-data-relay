@@ -19,12 +19,15 @@ export const createAdminRoutes = async (
         "/create-tenant",
         {
           schema: {
-            description:
-              "This will create a new tenant with the given name.",
+            description: "This will create a new tenant with the given name.",
             tags: ["tenant"],
             summary: "Create tenant",
             headers: {
-              Bearer: { type: "string", description: "This is the admin token that has been generated through the /admin-token endpoint." },
+              Bearer: {
+                type: "string",
+                description:
+                  "This is the admin token that has been generated through the /admin-token endpoint.",
+              },
             },
             body: {
               type: "object",
@@ -37,7 +40,10 @@ export const createAdminRoutes = async (
                 description: "Successful response",
                 type: "object",
                 properties: {
+                  id: { type: "string" },
                   name: { type: "string" },
+                  messageBrokerPassword: { type: "string" },
+                  lastSecret: { type: "string" },
                 },
               },
             },
